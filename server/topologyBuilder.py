@@ -2,7 +2,20 @@ import sys
 import json
 import flask
 import mininet
+from mininet import Controller
+from mininet import Host
+from mininet import Switch
+from mininet import Topology
 import os
+
+#ATTRIBUTI D'ISTANZA
+hostNodes = []
+switchNodes = []
+controllerNodes = []    #controller di tipo Ryu
+middleboxNodes = []     #per semplicità solo NAT
+linklist = []   #lista per link tra nodes
+
+topology = Topology()   #topologia scelta/creata
 
 
 app = flask(__name__)
