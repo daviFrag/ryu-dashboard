@@ -18,6 +18,7 @@ topology = Topo()   #topologia scelta/creata
 
 
 app = Flask(__name__)
+app.run(debug = True)
 
 #funzione nodi generici
 @app.route('/node', methods=['GET'])
@@ -118,3 +119,4 @@ def setForwardingRules():
 @app.route('/forwardingRule/<int:id>', methods=['POST'])
 def setForwardingRule(id):
     return "modify rule of forwarding"
+
