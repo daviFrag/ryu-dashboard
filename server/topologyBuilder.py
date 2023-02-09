@@ -13,7 +13,9 @@ from mininet.net import Mininet
 
 #testing
 from mininet.node import OVSKernelSwitch
+from mininet.cli import CLI
 from mininet.topolib import TreeTopo
+from mininet.log import info, lg
 #testing
 
 #ATTRIBUTI D'ISTANZA
@@ -23,8 +25,29 @@ controllerNodes = []    #controller di tipo Ryu
 middleboxNodes = []     #per semplicità solo NAT
 linklist = []   #lista per link tra nodes
 
-mn = Mininet(TreeTopo(depth = 2, fanout = 2), switch = OVSKernelSwitch)
-topology = Topo()   #topologia scelta/creata
+#mn = Mininet(TreeTopo(depth = 2, fanout = 2), switch = OVSKernelSwitch, waitConnected = True)
+
+def ifconfigTest( net ):
+	"Run ifconfig on all hosts in net."
+	hosts = net.hosts
+	for host in hosts:
+		info( host.cmd( 'ifconfig' ) )
+
+lg.setLogLevel('info')
+info( "*** Initializing Mininet and kernel modules\n" )
+OVSKernelSwitch.setup()
+info( "*** Creating network\n" )
+network = Mininet( TreeTopo( depth=2, fanout=2), switch=OVSKernelSwitch, waitConnected=True )
+info( "*** Starting network\n" )
+network.start()
+info( "*** Running ping test\n" )
+network.pingAll()
+info( "*** Running ifconfig test\n" )
+ifconfigTest( network )
+info( "*** Stopping network\n" )
+network.stop()
+
+#topology = Topo()   #topologia scelta/creata
 
 app = Flask(__name__)
 
