@@ -19,6 +19,11 @@ topology = Topo()   #topologia scelta/creata
 
 app = Flask(__name__)
 
+@app.route("/", methods=['GET', 'POST', 'PUT']) # decorator
+def home(): # route handler function
+    # returning a response
+    return "Hello World!"
+
 #funzione nodi generici
 @app.route('/node', methods=['GET'])
 def getListNodes():
