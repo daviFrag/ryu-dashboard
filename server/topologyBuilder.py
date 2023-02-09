@@ -1,11 +1,20 @@
+#!/usr/bin/env python3
+
 import sys
 import json
+import os
+
 from flask import Flask
 from mininet.node import Controller
 from mininet.node import Host
 from mininet.node import Switch
 from mininet.topo import Topo
-import os
+from mininet.net import Mininet
+
+#testing
+from mininet.node import OVSKernelSwitch
+from mininet.topolib import TreeTopo
+#testing
 
 #ATTRIBUTI D'ISTANZA
 hostNodes = []
@@ -14,11 +23,13 @@ controllerNodes = []    #controller di tipo Ryu
 middleboxNodes = []     #per semplicità solo NAT
 linklist = []   #lista per link tra nodes
 
+mn = Mininet(TreeTopo(depth = 2, fanout = 2), switch = OVSKernelSwitch)
 topology = Topo()   #topologia scelta/creata
-
 
 app = Flask(__name__)
 
+#API web server
+#decorator per testing
 @app.route("/", methods=['GET', 'POST', 'PUT']) # decorator
 def home(): # route handler function
     # returning a response
@@ -124,4 +135,6 @@ def setForwardingRules():
 def setForwardingRule(id):
     return "modify rule of forwarding"
 
-app.run(host = "0.0.0.0", port = 8080, debug = True)
+
+
+app.run(host = "0.0.0.0", port = 8080, debug = True)    #espongo a tutta la rete il web server
