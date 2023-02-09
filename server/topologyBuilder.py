@@ -25,9 +25,10 @@ controllerNodes = []    #controller di tipo Ryu
 middleboxNodes = []     #per semplicità solo NAT
 linklist = []   #lista per link tra nodes
 
-#mn = Mininet(TreeTopo(depth = 2, fanout = 2), switch = OVSKernelSwitch, waitConnected = True)
+mn = Mininet()
+mn.init()   #creo una mini rete vuota e la inizializzo
 
-def ifconfigTest( net ):
+""" def ifconfigTest( net ):
 	"Run ifconfig on all hosts in net."
 	hosts = net.hosts
 	for host in hosts:
@@ -45,9 +46,9 @@ network.pingAll()
 info( "*** Running ifconfig test\n" )
 ifconfigTest( network )
 info( "*** Stopping network\n" )
-network.stop()
+network.stop() """
 
-#topology = Topo()   #topologia scelta/creata
+topology = Topo()   #topologia scelta/creata
 
 app = Flask(__name__)
 
