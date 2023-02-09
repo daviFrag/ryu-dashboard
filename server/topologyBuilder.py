@@ -1,11 +1,10 @@
 import sys
 import json
-import flask
-import mininet
-from mininet import Controller
-from mininet import Host
-from mininet import Switch
-from mininet import Topology
+from flask import Flask
+from mininet.node import Controller
+from mininet.node import Host
+from mininet.node import Switch
+from mininet.topo import Topo
 import os
 
 #ATTRIBUTI D'ISTANZA
@@ -15,49 +14,54 @@ controllerNodes = []    #controller di tipo Ryu
 middleboxNodes = []     #per semplicità solo NAT
 linklist = []   #lista per link tra nodes
 
-topology = Topology()   #topologia scelta/creata
+topology = Topo()   #topologia scelta/creata
 
 
-app = flask(__name__)
+app = Flask(__name__)
 
 #funzione nodi generici
 @app.route('/node', methods=['GET'])
-def node():
+def getListNodes():
     return "get list nodes"
 
 #funzione per nodi specifici
 @app.route('/node/<int:id>', methods=['GET'])
-def node(id):
+def getNode(id):
     return "get node details"
 
 #funzione nodi generici
 @app.route('/node', methods=['POST'])
-def node():
+def setNodes():
     return "set list nodes"
 
 #funzione per nodi specifici
 @app.route('/node/<int:id>', methods=['PUT'])
-def node(id):
+def setNode(id):
     return "update node"
 
 #funzione per nodi specifici
 @app.route('/node/<int:id>', methods=['DELETE'])
-def node(id):
+def deleteNode(id):
     return 'delete a node'
 
 #funzione per visualizzare archi/link
 @app.route('/link', methods=['GET'])
-def link():
+def getLinks():
     return "get links"
 
 #funzione per visualizzare arco o link singolo
 @app.route('/link/<int:id>', methods=['GET'])
-def link(id):
+def getLink(id):
     return "get link"
 
-#funzione per aggiungere link tra nodi
+#funzione per aggiungere links tra nodi
 @app.route('/link', methods=['POST'])
-def link():
+def setLinks():
+    return "create/set links"
+
+#funzione per aggiungere link tra nodi
+@app.route('/link/<int:id>', methods=['POST'])
+def setLink(id):
     return "set/create a link"
 
 #funzione per creare topology predefinita
@@ -67,17 +71,17 @@ def createDefaultTopo():
 
 #funzione per ottenere info flusso pacchetti
 @app.route('/packetFlow/<int:id>', methods=['GET'])
-def packetFlow(id):
+def getPacketFlow(id):
     return "get flow of packets"
 
 #funzione per ottenere info middleboxes
 @app.route('/middlebox', methods=['GET'])
-def middlebox():
+def getMiddleboxes():
     return "get info middleboxes"
 
 #funzione per ottenere info middlebox
 @app.route('/middlebox/<int:id>', methods=['GET'])
-def middlebox(id):
+def getMiddlebox(id):
     return "get info middlebox"
 
 #funzione per uploadare nuova topology al server
@@ -97,22 +101,20 @@ def createTopo():
 
 #funzione per ottenere regole di forwarding di ryu
 @app.route('/forwardingRule', methods=['GET'])
-def forwardingRule():
+def getForwardingRules():
     return "get rules of forwarding"
 
 #funzione per ottenere regola di forwarding di ryu
 @app.route('/forwardingRule/<int:id>', methods=['GET'])
-def forwardingRule(id):
-    return "get rules of forwarding"
+def getForwardingRule(id):
+    return "get rule of forwarding"
 
 #funzione per modificare regole forwarding di ryu
 @app.route('/forwardingRule', methods=['POST'])
-def modifyForwRule():
+def setForwardingRules():
     return "modify rules of forwarding"
 
 #funzione per modificare regola forwarding di ryu
 @app.route('/forwardingRule/<int:id>', methods=['POST'])
-def forwardingRule(id):
+def setForwardingRule(id):
     return "modify rule of forwarding"
-
-#funzione per 
