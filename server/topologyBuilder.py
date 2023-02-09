@@ -1,164 +1,84 @@
-#!/usr/bin/env python3
-
-import sys
-import json
-import os
-
-from flask import Flask
-from mininet.node import Controller
-from mininet.node import Host
-from mininet.node import Switch
-from mininet.topo import Topo
 from mininet.net import Mininet
+from mininet.topo import Topo 
 
-#testing
 from mininet.node import OVSKernelSwitch
-from mininet.cli import CLI
-from mininet.topolib import TreeTopo
 from mininet.log import info, lg
-#testing
+from mininet.node import Node
+from mininet.cli import CLI
 
-#ATTRIBUTI D'ISTANZA
-hostNodes = []
-switchNodes = []
-controllerNodes = []    #controller di tipo Ryu
-middleboxNodes = []     #per semplicità solo NAT
-linklist = []   #lista per link tra nodes
+from enum import Enum
 
-mn = Mininet()
-mn.init()   #creo una mini rete vuota e la inizializzo
-
-""" def ifconfigTest( net ):
-	"Run ifconfig on all hosts in net."
-	hosts = net.hosts
-	for host in hosts:
-		info( host.cmd( 'ifconfig' ) )
-
-lg.setLogLevel('info')
-info( "*** Initializing Mininet and kernel modules\n" )
-OVSKernelSwitch.setup()
-info( "*** Creating network\n" )
-network = Mininet( TreeTopo( depth=2, fanout=2), switch=OVSKernelSwitch, waitConnected=True )
-info( "*** Starting network\n" )
-network.start()
-info( "*** Running ping test\n" )
-network.pingAll()
-info( "*** Running ifconfig test\n" )
-ifconfigTest( network )
-info( "*** Stopping network\n" )
-network.stop() """
-
-topology = Topo()   #topologia scelta/creata
-
-app = Flask(__name__)
-
-#API web server
-#decorator per testing
-@app.route("/", methods=['GET', 'POST', 'PUT']) # decorator
-def home(): # route handler function
-    # returning a response
-    return "Hello World!"
-
-#funzione nodi generici
-@app.route('/node', methods=['GET'])
-def getListNodes():
-    return "get list nodes"
-
-#funzione per nodi specifici
-@app.route('/node/<int:id>', methods=['GET'])
-def getNode(id):
-    return "get node details"
-
-#funzione nodi generici
-@app.route('/node', methods=['POST'])
-def setNodes():
-    return "set list nodes"
-
-#funzione per nodi specifici
-@app.route('/node/<int:id>', methods=['PUT'])
-def setNode(id):
-    return "update node"
-
-#funzione per nodi specifici
-@app.route('/node/<int:id>', methods=['DELETE'])
-def deleteNode(id):
-    return 'delete a node'
-
-#funzione per visualizzare archi/link
-@app.route('/link', methods=['GET'])
-def getLinks():
-    return "get links"
-
-#funzione per visualizzare arco o link singolo
-@app.route('/link/<int:id>', methods=['GET'])
-def getLink(id):
-    return "get link"
-
-#funzione per aggiungere links tra nodi
-@app.route('/link', methods=['POST'])
-def setLinks():
-    return "create/set links"
-
-#funzione per aggiungere link tra nodi
-@app.route('/link/<int:id>', methods=['POST'])
-def setLink(id):
-    return "set/create a link"
-
-#funzione per creare topology predefinita
-@app.route('/createDefaTopo', methods=['POST'])
-def createDefaultTopo():
-    return "create predefinite topology"
-
-#funzione per ottenere info flusso pacchetti
-@app.route('/packetFlow/<int:id>', methods=['GET'])
-def getPacketFlow(id):
-    return "get flow of packets"
-
-#funzione per ottenere info middleboxes
-@app.route('/middlebox', methods=['GET'])
-def getMiddleboxes():
-    return "get info middleboxes"
-
-#funzione per ottenere info middlebox
-@app.route('/middlebox/<int:id>', methods=['GET'])
-def getMiddlebox(id):
-    return "get info middlebox"
-
-#funzione per uploadare nuova topology al server
-@app.route('/uploadTopo', methods=['POST'])
-def uploadTopo():
-    return "upload of a topology"
-
-#funzione per cancellare topology
-@app.route('/deleteTopo', methods=['POST'])
-def deleteTopo():
-    return "delete topology"    
-
-#funzione per creare topology con parametri
-@app.route('/createTopo', methods=['POST'])
-def createTopo():
-    return "create topology"
-
-#funzione per ottenere regole di forwarding di ryu
-@app.route('/forwardingRule', methods=['GET'])
-def getForwardingRules():
-    return "get rules of forwarding"
-
-#funzione per ottenere regola di forwarding di ryu
-@app.route('/forwardingRule/<int:id>', methods=['GET'])
-def getForwardingRule(id):
-    return "get rule of forwarding"
-
-#funzione per modificare regole forwarding di ryu
-@app.route('/forwardingRule', methods=['POST'])
-def setForwardingRules():
-    return "modify rules of forwarding"
-
-#funzione per modificare regola forwarding di ryu
-@app.route('/forwardingRule/<int:id>', methods=['POST'])
-def setForwardingRule(id):
-    return "modify rule of forwarding"
+class NodeType(Enum):
+    HOST = "host"
+    SWITCH = "switch"
+    CONTROLLER = "controller"
 
 
+class TopologyBuilder:
+    mn = Mininet(switch=OVSKernelSwitch, waitConnected=True)
 
-app.run(host = "0.0.0.0", port = 8080, debug = True)    #espongo a tutta la rete il web server
+    def __init__(self):
+        lg.setLogLevel('info')
+        OVSKernelSwitch.setup()
+        self.mn.init()
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(hosts={self.hosts},switches={self.switches},controlles={self.controllers},links={self.links})"
+
+
+    def loadTopology(self, topo):
+        customTopo = Topo()
+
+        # Adding hosts
+        for host in topo["hosts"]:
+            customTopo.addHost(host)
+
+        # Adding switches
+        for switch in topo["switches"]:
+            customTopo.addSwitch(switch)
+
+        # Adding links
+        for link in topo["links"]:
+            source = link.split("-")[0]
+            target = link.split("-")[1]
+
+            customTopo.addLink(source, target)
+            
+        self.mn.buildFromTopo(customTopo)
+
+        print(self.getNodeJSON('h0'))
+
+    #get node class
+    def getNodeType(self, node):
+        return node.__class__.__name__
+
+    # get JSON rappresentation of a generic node
+    def getNodeJSON(self, nodeName):
+        node = self.mn.get(nodeName)
+        return {"name": node.name, "type": self.getNodeType(node)}
+
+    # add generic node
+    def addNode(self, node):    #node è un tipo JSON (attributi di node + NodeType)
+        if NodeType(node['type']) == NodeType.HOST:
+            host = self.mn.addHost(node['name'])
+            return host
+        if NodeType(node['type']) == NodeType.SWITCH:
+            switch = self.mn.addSwitch(node['name'])
+            return switch
+        if NodeType(node['type']) == NodeType.CONTROLLER:
+            controller = self.mn.addController(node['name'])
+            return controller
+
+    def runCLI(self):
+        CLI( self.mn )
+
+    # delete a generic node
+    def removeNode(self, nodeName):
+        #cancello nodo da Mininet e poi da variabili istanza di TopologyBuilder
+        if self.mn.__contains__(nodeName):  #se nodo esiste in mn true
+            node = self.mn.get(nodeName)
+            node.terminate()
+            node.deleteIntfs(True)    #cancello tutte le network interfaces
+            #cancella da mn il nodo
+            self.mn.delNode(node)
+
