@@ -1,60 +1,9 @@
 #!/usr/bin/env python3
 
-import sys
-import json
-import os
-
-from flask import Flask
-from mininet.node import Controller
-from mininet.node import Host
-from mininet.node import Switch
-from mininet.topo import Topo
-from mininet.net import Mininet
-from mininet.clean import Cleanup
-
-#testing
-from mininet.node import OVSKernelSwitch
-from mininet.cli import CLI
-from mininet.topolib import TreeTopo
-from mininet.log import info, lg
-#testing
+from flask import Flask, request
 
 from topologyBuilder import TopologyBuilder
-
-#clean junk
-cup = Cleanup()
-cup.cleanup()
-
-#ATTRIBUTI D'ISTANZA
-hostNodes = []
-switchNodes = []
-controllerNodes = []    #controller di tipo Ryu
-middleboxNodes = []     #per semplicità solo NAT
-linklist = []   #lista per link tra nodes
-
-# mn = Mininet(TreeTopo(depth = 2, fanout = 2), switch = OVSKernelSwitch, waitConnected = True)
-
-# def ifconfigTest( net ):
-# 	"Run ifconfig on all hosts in net."
-# 	hosts = net.hosts
-# 	for host in hosts:
-# 		info( host.cmd( 'ifconfig' ) )
-
-# lg.setLogLevel('info')
-# info( "*** Initializing Mininet and kernel modules\n" )
-# OVSKernelSwitch.setup()
-# info( "*** Creating network\n" )
-# network = Mininet( TreeTopo( depth=2, fanout=2), switch=OVSKernelSwitch, waitConnected=True )
-# info( "*** Starting network\n" )
-# network.start()
-# info( "*** Running ping test\n" )
-# network.pingAll()
-# info( "*** Running ifconfig test\n" )
-# ifconfigTest( network )
-# info( "*** Stopping network\n" )
-# network.stop()
-
-#topology = Topo()   #topologia scelta/creata
+from threading import Thread
 
 topo = {
     "hosts": [
@@ -78,6 +27,8 @@ topo = {
     ]
 }
 
+tb = TopologyBuilder()
+
 app = Flask(__name__)
 
 #API web server
@@ -87,28 +38,37 @@ def home(): # route handler function
     # returning a response
     return "Hello World!"
 
+# load topology
+@app.route("/topology", methods=['POST'])
+def initTopology():
+    tb.loadTopology(topo)
+    return tb.getTopoJSON()
+
 #funzione nodi generici
 @app.route('/node', methods=['GET'])
 def getListNodes():
-    return "get list nodes"
+    return tb.getNodesJSON()
 
 #funzione per nodi specifici
-@app.route('/node/<int:id>', methods=['GET'])
-def getNode(id):
-    return "get node details"
+@app.route('/node/<name>', methods=['GET'])
+def getNode(name):
+    return tb.getNodeJSON(name)
 
-#funzione nodi generici
+#funzione per impostare/aggiornare n nodi
 @app.route('/node', methods=['POST'])
 def addNodes():
-    return "set list nodes"
+    requestJSON = request.get_json()
+    tb.setNodes(requestJSON)
+    #coming soon
 
 #funzione per nodi specifici
-@app.route('/node/<int:id>', methods=['PUT'])
-def addNode(id):
-    return "update node"
+@app.route('/node/<name>', methods=['PUT'])
+def addNode(name):
+    requestJSON = request.get_json()
+    return tb.setNode(requestJSON, name)
 
 #funzione per nodi specifici
-@app.route('/node/<int:id>', methods=['DELETE'])
+@app.route('/node/<name>', methods=['DELETE'])
 def deleteNode(id):
     return 'delete a node'
 
@@ -186,14 +146,5 @@ def setForwardingRules():
 @app.route('/forwardingRule/<int:id>', methods=['POST'])
 def setForwardingRule(id):
     return "modify rule of forwarding"
-
-
-tb = TopologyBuilder()
-
-tb.loadTopology(topo)
-
-tb.runCLI()
-
-print(tb)
 
 app.run(host = "0.0.0.0", port = 8080, debug = True)    #espongo a tutta la rete il web server

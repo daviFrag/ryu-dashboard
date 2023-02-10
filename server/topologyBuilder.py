@@ -2,9 +2,11 @@ from mininet.net import Mininet
 from mininet.topo import Topo 
 
 from mininet.node import OVSKernelSwitch
-from mininet.log import info, lg
-from mininet.node import Node
+from mininet.log import lg
 from mininet.cli import CLI
+from mininet.clean import Cleanup
+from mininet.node import Node
+from mininet.link import Intf
 
 from enum import Enum
 
@@ -19,11 +21,16 @@ class TopologyBuilder:
 
     def __init__(self):
         lg.setLogLevel('info')
-        OVSKernelSwitch.setup()
-        self.mn.init()
 
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}(hosts={self.hosts},switches={self.switches},controlles={self.controllers},links={self.links})"
+        # Clean existing data
+        cup = Cleanup()
+        cup.cleanup()
+
+        # Switch setup
+        OVSKernelSwitch.setup()
+
+        # Init topology
+        self.mn.init()
 
 
     def loadTopology(self, topo):
@@ -55,7 +62,93 @@ class TopologyBuilder:
     # get JSON rappresentation of a generic node
     def getNodeJSON(self, nodeName):
         node = self.mn.get(nodeName)
-        return {"name": node.name, "type": self.getNodeType(node)}
+        return {
+            "name": node.name,
+            "intfs": self.getIntfsJSON(node.intfList()),
+            "isSetup": node.isSetup,
+            "type": self.getNodeType(node),
+        }
+
+    # get JSON rappresentation of all nodes
+    def getNodesJSON(self):
+        out ={
+            "hosts": self.getHostsJSON(),
+            "switches": self.getSwitchesJSON(),
+            "controllers": self.getControllersJSON()
+        }
+        return out
+
+    # get JSON rappresentation of all hosts
+    def getHostsJSON(self):
+        out = []
+        for host in self.mn.hosts:
+            out.append({
+                "name": host.name,
+                "intfs": self.getIntfsJSON(host.intfList()),
+                "isSetup": host.isSetup,
+            })
+        return out
+
+    # get JSON rappresentation of all switches
+    def getSwitchesJSON(self):
+        out = []
+        for switch in self.mn.switches:
+            out.append({
+                "name": switch.name,
+                "intfs": self.getIntfsJSON(switch.intfList()),
+                "isSetup": switch.isSetup,
+            })
+        return out
+    
+    # get JSON rappresentation of all controllers
+    def getControllersJSON(self):
+        out = []
+        for controller in self.mn.controllers:
+            out.append({
+                "name": controller.name,
+                "intfs": self.getIntfsJSON(controller.intfList()),
+                "isSetup": controller.isSetup,
+            })
+        return out
+    
+    # get JSON rappresentation of the interfaces of a node
+    def getIntfsJSON(self, listIntfs):
+        out = []
+        for intf in listIntfs:
+            out.append({
+                "name": intf.name,
+                "ip": intf.ip,
+            })
+        return out
+
+    # get JSON rappresentation of links
+    def getLinksJSON(self):
+        out = []
+        for link in self.mn.links:
+            out.append({
+                "intf1": {
+                    "name": link.intf1.name,
+                    "ip": link.intf1.ip,
+                },
+                "intf2": {
+                    "name": link.intf2.name,
+                    "ip": link.intf2.ip,
+                }
+            })
+        return out
+
+    # get JSON rappresentation of the entire topology
+    def getTopoJSON(self):
+        
+        switchNodes = self.mn.switches
+        controllerNodes = self.mn.controllers
+
+        return {
+            "hosts": self.getHostsJSON(),
+            "switches": self.getSwitchesJSON(),
+            "controllers": self.getControllersJSON(),
+            "links": self.getLinksJSON(),
+        }
 
     # add generic node
     def addNode(self, node):    #node è un tipo JSON (attributi di node + NodeType)
@@ -69,9 +162,6 @@ class TopologyBuilder:
             controller = self.mn.addController(node['name'])
             return controller
 
-    def runCLI(self):
-        CLI( self.mn )
-
     # delete a generic node
     def removeNode(self, nodeName):
         #cancello nodo da Mininet e poi da variabili istanza di TopologyBuilder
@@ -81,4 +171,38 @@ class TopologyBuilder:
             node.deleteIntfs(True)    #cancello tutte le network interfaces
             #cancella da mn il nodo
             self.mn.delNode(node)
+    
+    # start the CLI from the terminal
+    def runCLI(self):
+        CLI( self.mn )
+
+    # insert or update node
+    def setNode(self, node, name):
+        if self.mn.__contains__(name):  #if true update node, else add node to topology
+            nodeToUpdate = self.mn.get(name)
+            print(nodeToUpdate.intf())
+            for intf in node["intfs"]: #you can change only the ip of the interface
+                # intfTemp = Intf(intf["name"],node=nodeToUpdate)
+                # intfTemp.setIP(node["intfs"][intf.name].ip)
+                try:
+                    Intf(intf["name"],node=nodeToUpdate)
+                except:
+                    pass
+                nodeToUpdate.setIP(intf["ip"], intf = intf["name"])
+
+            nodeToUpdate.isSetup = node["isSetup"]
+            #self.runCLI()
+            return self.getNodeJSON(name)
+
+        else:
+            newNode = self.addNode(node)
+            for intfData in node["intfs"]:
+                try:
+                    Intf(intfData["name"],node=newNode)
+                except:
+                    pass
+                newNode.setIP(intfData["ip"], intf = intfData["name"])
+                
+
+            return self.getNodeJSON(name)
 
