@@ -10,7 +10,8 @@
     "prettier": "prettier --write ."
   },
   "dependencies": {
-    "@chakra-ui/react": "^2.4.3",
+    "@chakra-ui/icons": "^2.0.17",
+    "@chakra-ui/react": "^2.4.9",
     "@emotion/react": "^11.10.5",
     "@emotion/styled": "^11.10.5",
     "@types/node": "18.11.15",
@@ -18,14 +19,16 @@
     "@types/react-dom": "18.0.9",
     "eslint": "8.29.0",
     "eslint-config-next": "13.0.6",
-    "framer-motion": "^7.9.1",
+    "framer-motion": "^7.10.3",
     "next": "13.0.6",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "reactflow": "^11.3.3",
-    "typescript": "4.9.4"
+    "typescript": "4.9.4",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
+    "@types/uuid": "^9.0.0",
     "prettier": "2.8.1",
     "prettier-plugin-organize-imports": "^3.2.1"
   }
