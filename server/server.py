@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-from flask import Flask, request
-
-from topologyBuilder import TopologyBuilder
 from threading import Thread
+
+from flask import Flask, request
+from flask_cors import CORS
+from topologyBuilder import TopologyBuilder
 
 topo = {
     "hosts": [
@@ -30,6 +31,7 @@ topo = {
 tb = TopologyBuilder()
 
 app = Flask(__name__)
+CORS(app)
 
 #API web server
 #decorator per testing
