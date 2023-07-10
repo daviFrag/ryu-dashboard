@@ -1,5 +1,5 @@
 import { Flex, useDisclosure } from '@chakra-ui/react';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ReactFlow, {
   addEdge,
   applyEdgeChanges,
@@ -17,6 +17,7 @@ import ReactFlow, {
 } from 'reactflow';
 
 import 'reactflow/dist/style.css';
+import { Graph } from '../../data/models/Graph';
 import DataEdge from '../Edges/DataEdge';
 import ContextMenu from '../Menu/ContextMenu';
 import HostMenu from '../Menu/HostMenu';
@@ -28,48 +29,23 @@ export type OnPaneContextMenu = (event: React.MouseEvent) => void;
 
 export type DiagramProps = {};
 
-const initialNodes: Node[] = [
-  {
-    id: '1',
-    type: 'controllerNode',
-    position: { x: 0, y: 0 },
-    data: { label: 'c0' },
-  },
-  {
-    id: '2',
-    type: 'switchNode',
-    position: { x: 0, y: 100 },
-    data: { label: 's0' },
-  },
-  {
-    id: '3',
-    type: 'hostNode',
-    position: { x: -100, y: 200 },
-    data: { label: 'h0' },
-  },
-  {
-    id: '4',
-    type: 'hostNode',
-    position: { x: 100, y: 200 },
-    data: { label: 'h1' },
-  },
-];
-
-const initialEdges: Edge[] = [
-  {
-    id: 'e1-2',
-    source: '1',
-    target: '2',
-    animated: true,
-    type: 'dataEdge',
-    data: {
-      text: '',
-      packets: 100,
-    },
-  },
-  { id: 'e2-3', source: '2', target: '3' },
-  { id: 'e2-4', source: '2', target: '4' },
-];
+const exampleTopology = {
+  hosts: ['h0', 'h1', 'h2', 'h3', 'h4'],
+  switches: ['s0', 's1', 's2', 's3', 's4', 's5'],
+  controllers: [],
+  links: [
+    's0-s1',
+    's1-s2',
+    's2-s3',
+    's3-s4',
+    's0-s5',
+    // 's0-h0',
+    // 'h1-s0',
+    // 'h2-s0',
+    // 'h3-s1',
+    // 'h4-s1',
+  ],
+};
 
 const Diagram = (props: DiagramProps) => {
   const nodeTypes = useMemo(
@@ -101,8 +77,8 @@ const Diagram = (props: DiagramProps) => {
     []
   );
 
-  const [nodes, setNodes] = useState(initialNodes);
-  const [edges, setEdges] = useState(initialEdges);
+  const [nodes, setNodes] = useState<Node[]>([]);
+  const [edges, setEdges] = useState<Edge[]>([]);
 
   const {
     isOpen: isOpenMenu,
@@ -167,6 +143,15 @@ const Diagram = (props: DiagramProps) => {
   };
 
   const addNode = (n: Node) => setNodes((prev) => [...prev, n]);
+
+  useEffect(() => {
+    (async () => {
+      const g = new Graph(exampleTopology);
+      const render = await g.getRenderV2();
+      setNodes(render.nodes);
+      setEdges(render.edges);
+    })();
+  }, []);
 
   return (
     <Flex direction={'column'} h="100vh" w="full">
