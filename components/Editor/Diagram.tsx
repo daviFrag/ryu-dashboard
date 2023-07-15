@@ -1,29 +1,32 @@
 import { Flex, useDisclosure } from '@chakra-ui/react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ReactFlow, {
-  addEdge,
-  applyEdgeChanges,
-  applyNodeChanges,
   Background,
   Controls,
   Edge,
   MiniMap,
   Node,
+  NodeMouseHandler,
   OnConnect,
   OnEdgesChange,
   OnNodesChange,
   ReactFlowProvider,
   XYPosition,
+  addEdge,
+  applyEdgeChanges,
+  applyNodeChanges,
+  useReactFlow,
 } from 'reactflow';
 
 import 'reactflow/dist/style.css';
 import { Graph } from '../../data/models/Graph';
 import DataEdge from '../Edges/DataEdge';
 import ContextMenu from '../Menu/ContextMenu';
-import HostMenu from '../Menu/HostMenu';
+import EditorNav from '../Navbars/EditorNav';
 import ControllerNode from '../Nodes/ControllerNode';
 import HostNode from '../Nodes/HostNode';
 import SwitchNode from '../Nodes/SwitchNode';
+import { PropertySideBar } from '../SideBar/PropertySideBar';
 
 export type OnPaneContextMenu = (event: React.MouseEvent) => void;
 
@@ -39,15 +42,17 @@ const exampleTopology = {
     's2-s3',
     's3-s4',
     's0-s5',
-    // 's0-h0',
-    // 'h1-s0',
-    // 'h2-s0',
-    // 'h3-s1',
-    // 'h4-s1',
+    's0-h0',
+    's0-h1',
+    's0-h2',
+    's1-h3',
+    's1-h4',
   ],
 };
 
 const Diagram = (props: DiagramProps) => {
+  const { fitView } = useReactFlow();
+
   const nodeTypes = useMemo(
     () => ({
       switchNode: SwitchNode,
@@ -90,6 +95,11 @@ const Diagram = (props: DiagramProps) => {
     onOpen: onOpenHost,
     onClose: onCloseHost,
   } = useDisclosure();
+  const {
+    isOpen: isOpenProperty,
+    onOpen: onOpenProperty,
+    onClose: onCloseProperty,
+  } = useDisclosure();
   const [menuPos, setMenuPos] = useState<XYPosition>({ x: 0, y: 0 });
 
   const onNodesChange = useCallback<OnNodesChange>(
@@ -128,7 +138,7 @@ const Diagram = (props: DiagramProps) => {
     onCloseHost();
   };
 
-  const onNodeClick = (e: React.MouseEvent) => {
+  const onNodeClick: NodeMouseHandler = (e, node) => {
     e.preventDefault();
     const rect = e.currentTarget.getBoundingClientRect();
     const pos = {
@@ -137,8 +147,10 @@ const Diagram = (props: DiagramProps) => {
     };
 
     console.log(pos);
+    fitView({ nodes: [node], duration: 800, minZoom: 4, maxZoom: 6 });
 
     setMenuPos(pos);
+    onOpenProperty();
     onOpenHost();
   };
 
@@ -147,7 +159,7 @@ const Diagram = (props: DiagramProps) => {
   useEffect(() => {
     (async () => {
       const g = new Graph(exampleTopology);
-      const render = await g.getRenderV2();
+      const render = await g.getRender();
       setNodes(render.nodes);
       setEdges(render.edges);
     })();
@@ -155,6 +167,7 @@ const Diagram = (props: DiagramProps) => {
 
   return (
     <Flex direction={'column'} h="100vh" w="full">
+      <EditorNav saveFunc={async () => void 0} />
       <ReactFlow
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
@@ -178,7 +191,14 @@ const Diagram = (props: DiagramProps) => {
         onClose={onCloseMenu}
         addNode={addNode}
       />
-      <HostMenu pos={menuPos} isOpen={isOpenHost} onClose={onCloseHost} />
+      {/* <HostMenu pos={menuPos} isOpen={isOpenHost} onClose={onCloseHost} /> */}
+      <PropertySideBar
+        isOpen={isOpenProperty}
+        onClose={() => {
+          fitView({ nodes: nodes, duration: 800 });
+          onCloseProperty();
+        }}
+      />
     </Flex>
   );
 };

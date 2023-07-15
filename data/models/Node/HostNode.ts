@@ -10,4 +10,7 @@ export class HostNode extends Node {
       data: { label: this.label },
     };
   }
+  getType(): string {
+    return 'hostNode';
+  }
 }

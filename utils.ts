@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Node } from 'reactflow';
 import { v4 } from 'uuid';
-import { Graph, Topology } from './pages/graph';
+import { Graph, Topology } from './app/graph/page';
 
 export const useHasHydrated = () => {
   const [hasHydrated, setHasHydrated] = useState<boolean>(false);
@@ -38,10 +38,6 @@ const addSwitch = (switchName: string, graph: Graph, topo: Topology) => {
       data: { label: value },
     });
   });
-};
-
-const findRoots = (topo: Topology) => {
-  // topo.links.forEach(())
 };
 
 export const buildTopo = (topo: Topology) => {

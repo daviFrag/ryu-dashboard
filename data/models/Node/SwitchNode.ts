@@ -10,4 +10,7 @@ export class SwitchNode extends Node {
       data: { label: this.label },
     };
   }
+  getType(): string {
+    return 'switchNode';
+  }
 }

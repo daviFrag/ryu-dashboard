@@ -1,11 +1,11 @@
-import ELK from 'elkjs';
+import ELK, { ElkNode } from 'elkjs';
 import { Edge as ReactFlowEdge, Node as ReactFlowNode } from 'reactflow';
 import { v4 } from 'uuid';
 import { DataEdge } from './Edge/DataEdge';
 import { Edge } from './Edge/Edge';
 import { ControllerNode } from './Node/ControllerNode';
 import { HostNode } from './Node/HostNode';
-import { Node, NodePosition } from './Node/Node';
+import { Node } from './Node/Node';
 import { SwitchNode } from './Node/SwitchNode';
 import { Topology } from './Topology';
 
@@ -89,55 +89,37 @@ export class Graph {
     return this.edges;
   }
 
-  private getRenderRec(
-    nodeId: string,
-    visitedNodes: Map<string, boolean>,
-    renderGraph: { nodes: ReactFlowNode[]; edges: ReactFlowEdge[] },
-    rootPos: NodePosition
-  ) {
-    const root = this.nodes.get(nodeId);
-    if (!root) return;
-
-    if (!visitedNodes.get(nodeId)) {
-      root.setPos(rootPos);
-
-      renderGraph.nodes.push(root.getReactFlowNode());
-    }
-
-    visitedNodes.set(nodeId, true);
-
-    root.edges.forEach((edge, index) => {
-      const node = edge.getTarget();
-      const nId = node.getId();
-
-      if (visitedNodes.get(nId) === undefined || visitedNodes.get(nId) === true)
-        return;
-      renderGraph.edges.push(edge.getReactFlowEdge());
-      const newPosition = {
-        x: rootPos.x + 50 * (index + 1),
-        y: rootPos.y + 100,
-      };
-      this.getRenderRec(node.getId(), visitedNodes, renderGraph, newPosition);
-    });
-  }
-
-  async getRenderV2() {
+  async getRender() {
     const elk = new ELK();
 
-    const graph = {
-      id: 'root',
-      layoutOptions: {
-        'elk.algorithm': 'layered',
-        'elk.direction': 'DOWN',
-        'nodePlacement.strategy': 'SIMPLE',
-      },
-      children: this.topo.switches.map((n) => ({
+    const nodes: ElkNode[] = [];
+
+    nodes.push(
+      ...this.topo.switches.map((n) => ({
         id: n,
         type: 'switchNode',
         width: 100,
         height: 100,
         labels: [{ text: n }],
-      })),
+      }))
+    );
+    let currentIndex = nodes.length;
+    nodes.push(
+      ...this.topo.hosts.map((n) => ({
+        id: n,
+        type: 'hostNode',
+        width: 100,
+        height: 100,
+        labels: [{ text: n }],
+      }))
+    );
+
+    const graph = {
+      id: 'root',
+      layoutOptions: {
+        'elk.algorithm': 'mrtree',
+      },
+      children: nodes,
       edges: this.topo.links.map((e) => ({
         id: v4(),
         sources: [e.split('-')[0]],
@@ -172,24 +154,6 @@ export class Graph {
             };
           }),
     };
-
-    return renderGraph;
-  }
-
-  getRender() {
-    const renderGraph: { nodes: ReactFlowNode[]; edges: ReactFlowEdge[] } = {
-      nodes: [],
-      edges: [],
-    };
-    const visitedNodes = new Map<string, boolean>();
-    this.nodes.forEach((value) => {
-      visitedNodes.set(value.getId(), false);
-    });
-
-    this.getRenderRec(this.topo.switches[0], visitedNodes, renderGraph, {
-      x: 0,
-      y: 0,
-    });
 
     return renderGraph;
   }

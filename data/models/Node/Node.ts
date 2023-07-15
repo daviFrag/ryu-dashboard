@@ -27,6 +27,8 @@ export abstract class Node {
     this.edges = props.edges ?? [];
   }
 
+  abstract getType(): string;
+
   abstract getReactFlowNode(): ReactFlowNode;
 
   setPos(pos: NodePosition) {

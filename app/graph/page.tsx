@@ -1,8 +1,10 @@
+'use client'
+
 import { Flex } from '@chakra-ui/react';
 import { useEffect } from 'react';
 import { Edge, Node } from 'reactflow';
-import Diagram from '../components/Editor/Diagram';
-import { useHasHydrated } from '../utils';
+import Diagram from '../../components/Editor/Diagram';
+import { useHasHydrated } from '../../utils';
 
 const initGraph = async () => {
   // await axios.post('http://localhost:7000/topology');

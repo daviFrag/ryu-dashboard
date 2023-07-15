@@ -1,3 +1,5 @@
+'use client'
+
 import { Heading } from '@chakra-ui/react';
 import Image from 'next/image';
 import BaseNav from '../components/Navbars/BaseNav';

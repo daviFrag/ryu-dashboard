@@ -7,6 +7,10 @@ export class ControllerNode extends Node {
   constructor(props: ControllerNodeProps) {
     super(props);
   }
+  getType(): string {
+    return 'controllerNode';
+  }
+
   getReactFlowNode(): ReactFlowNode {
     return {
       id: this.id + '',
