@@ -1,6 +1,4 @@
 import {
-  ArrowBackIcon,
-  ArrowForwardIcon,
   ArrowRightIcon,
   CloseIcon,
   CopyIcon,
@@ -76,18 +74,6 @@ export default function EditorNav({ saveFunc }: EditorNavProps) {
             className="mr-3"
             alt="Polyglot Logo"
           /> */}
-          <ActionButton
-            label="Back"
-            // disabled={hydrated ? !checkBackAction : true}
-            // onClick={backAction}
-            icon={<ArrowBackIcon w={6} h={6} color="blue.500" />}
-          />
-          <ActionButton
-            label="Forward"
-            // disabled={hydrated ? !checkForwardAction : true}
-            // onClick={forwardAction}
-            icon={<ArrowForwardIcon w={6} h={6} color="blue.500" />}
-          />
           <ActionButton
             label="Save"
             // disabled={hydrated ? !checkSave : true}

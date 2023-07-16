@@ -166,7 +166,7 @@ const Diagram = (props: DiagramProps) => {
   }, []);
 
   return (
-    <Flex direction={'column'} h="100vh" w="full">
+    <Flex direction={'column'} h="100vh" w="100vw">
       <EditorNav saveFunc={async () => void 0} />
       <ReactFlow
         nodeTypes={nodeTypes}
