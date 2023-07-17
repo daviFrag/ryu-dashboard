@@ -6,7 +6,7 @@ from flask import Flask, request
 from flask_cors import CORS
 from topologyBuilder import TopologyBuilder
 
-topo = {
+init_topo = {
     "hosts": [
         "h0",
         "h1",
@@ -43,8 +43,19 @@ def home(): # route handler function
 # load topology
 @app.route("/topology", methods=['POST'])
 def initTopology():
+    topo = request.get_json()
     tb.loadTopology(topo)
     return tb.getTopoJSON()
+
+@app.route("/topology/start", methods=['POST'])
+def startTopology():
+    tb.startMininet()
+    return {"status": "ok"}
+
+@app.route("/topology/stop", methods=['POST'])
+def stopTopology():
+    tb.stopMininet()
+    return {"status": "ok"}
 
 #funzione nodi generici
 @app.route('/node', methods=['GET'])

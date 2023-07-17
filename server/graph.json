@@ -1,0 +1,53 @@
+{
+    "nodes": [
+        {
+            "type": "HostNode",
+            "hostname": "h0",
+            "nodeNum": 1,
+            "ip": "10.0.0.1/24",
+            "default_route": "10.0.0.0",
+            "cpu": 0.25,
+            "cores": 1,
+            "start_command": "ifconfig",
+            "stop_command": "",
+            "VLAN_interfaces": [
+                {
+                    "ip": "10.0.0.2",
+                    "VLAN_ID": "1"
+                }
+            ],
+            "externaInterfaces": [
+                "example_intf"
+            ]
+        },
+        {
+            "type": "switch",
+            "subType": "default",
+            "hostname": "s0",
+            "nodeNum": 2,
+            "netFlow": false,
+            "sFlow": false,
+            "ip": "10.0.0.2",
+            "dpctl": null,
+            "externalInterfaces": []
+        },
+        {
+            "type": "controller",
+            "subType": "ovs",
+            "hostname": "c0",
+            "nodeNum": 3,
+            "protocol": "tcp",
+            "ip": "127.0.0.1",
+            "port": 6633
+        }
+    ],
+    "links": [
+        {
+            "src": "s0",
+            "dest": "h0",
+            "bandwidth": 1000,
+            "delay": 0,
+            "loss": 0.0
+        }
+    ]
+}
