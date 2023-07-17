@@ -9,7 +9,7 @@ from mininet.link import Intf, TCLink
 from mininet.util import (netParse, ipAdd)
 from nodes import DockerHost
 
-from subprocess import call
+from subprocess import call, Popen, PIPE
 
 from enum import Enum
 
@@ -39,8 +39,8 @@ class TopologyBuilder:
     mn = Mininet(topo=None, waitConnected=True)
     ipBase = "10.0.0.1/8"
     switchDefaultType = SwitchSubTypes.OVSKS
-    nflowTarget = ""
-    nflowTimeout = 0
+    nflowTarget = "10.0.2.2:9996"
+    nflowTimeout = "600"
     nflowAddId = False
 
     def __init__(self):
@@ -333,11 +333,13 @@ class TopologyBuilder:
                 nflowCmd = nflowCmd + ' add_id_to_interface=false'
             
             call(nflowCmd+nflowSwitches, shell=True)
+            self.mn.getNodeByName(node.get("hostname")).cmdPrint("curl 10.0.2.2:9996")
 
 
     def postConfiguration(self, nodes):
         self.createVLANIntf(nodes)
         self.startCommandHosts(nodes)
+        self.setupNetflow(nodes)
 
 
 
