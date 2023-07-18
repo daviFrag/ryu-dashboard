@@ -1,4 +1,5 @@
 import {
+  Box,
   Drawer,
   DrawerBody,
   DrawerCloseButton,
@@ -7,16 +8,25 @@ import {
   SlideOptions,
   useBreakpointValue,
 } from '@chakra-ui/react';
+import { useMemo } from 'react';
+import { Edge, Node } from 'reactflow';
 import ControllerNodeProperties from '../Properties/Nodes/ControllerNodeProperties copy';
+import HostNodeProperties from '../Properties/Nodes/HostNodeProperties';
+import SwitchNodeProperties from '../Properties/Nodes/SwitchNodeProperties';
 
 type PlacementType = SlideOptions['direction'] | 'start' | 'end';
 
 type PropertySideBarProps = {
+  selectedElement: Node | Edge | undefined;
   isOpen: boolean;
   onClose: () => void;
 };
 
-export const PropertySideBar = ({ isOpen, onClose }: PropertySideBarProps) => {
+export const PropertySideBar = ({
+  selectedElement,
+  isOpen,
+  onClose,
+}: PropertySideBarProps) => {
   const respPlacement = useBreakpointValue<PlacementType>(
     {
       base: 'bottom',
@@ -31,6 +41,19 @@ export const PropertySideBar = ({ isOpen, onClose }: PropertySideBarProps) => {
       fallback: 'lg',
     }
   );
+  const PropertyComponent = useMemo(() => {
+    switch (selectedElement?.type) {
+      case 'hostNode':
+        return HostNodeProperties;
+      case 'switchNode':
+        return SwitchNodeProperties;
+      case 'controllerNode':
+        return ControllerNodeProperties;
+      default:
+        return Box;
+    }
+  }, [selectedElement?.type]);
+
   return (
     <Drawer
       placement={respPlacement}
@@ -44,7 +67,7 @@ export const PropertySideBar = ({ isOpen, onClose }: PropertySideBarProps) => {
           Properties
         </DrawerHeader>
         <DrawerBody>
-          <ControllerNodeProperties />
+          <PropertyComponent />
         </DrawerBody>
       </DrawerContent>
     </Drawer>

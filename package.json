@@ -27,13 +27,15 @@
     "eslint": "8.44.0",
     "eslint-config-next": "^13.4.9",
     "framer-motion": "^10.12.18",
+    "immer": "^10.0.2",
     "next": "13.4.9",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "reactflow": "^11.3.3",
     "typescript": "5.1.6",
     "uuid": "^9.0.0",
-    "web-worker": "^1.2.0"
+    "web-worker": "^1.2.0",
+    "zustand": "^4.3.9"
   },
   "devDependencies": {
     "@types/uuid": "^9.0.2",

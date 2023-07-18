@@ -1,5 +1,5 @@
 import { Flex, useDisclosure } from '@chakra-ui/react';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -13,13 +13,14 @@ import ReactFlow, {
   ReactFlowProvider,
   XYPosition,
   addEdge,
-  applyEdgeChanges,
-  applyNodeChanges,
+  useOnSelectionChange,
   useReactFlow,
+  useStoreApi,
 } from 'reactflow';
 
 import 'reactflow/dist/style.css';
 import { Graph } from '../../data/models/Graph';
+import { useNetStore } from '../../data/zustand/net';
 import DataEdge from '../Edges/DataEdge';
 import ContextMenu from '../Menu/ContextMenu';
 import EditorNav from '../Navbars/EditorNav';
@@ -50,17 +51,38 @@ const exampleTopology = {
   ],
 };
 
+const edgeTypes = {
+  dataEdge: DataEdge,
+};
+
+const nodeTypes = {
+  switchNode: SwitchNode,
+  hostNode: HostNode,
+  controllerNode: ControllerNode,
+};
+
 const Diagram = (props: DiagramProps) => {
+  const {
+    setNodes,
+    setEdges,
+    getReactFlowEdges,
+    getReactFlowNodes,
+    applyNodeChanges,
+    applyEdgeChanges,
+  } = useNetStore();
   const { fitView } = useReactFlow();
 
-  const nodeTypes = useMemo(
-    () => ({
-      switchNode: SwitchNode,
-      hostNode: HostNode,
-      controllerNode: ControllerNode,
-    }),
-    []
-  );
+  const { resetSelectedElements } = useStoreApi().getState();
+
+  const [selectedElement, setSelectedElement] = useState<Node | Edge>();
+
+  useOnSelectionChange({
+    onChange: ({ nodes, edges }) => {
+      if (nodes.length > 0) return setSelectedElement(nodes[0]);
+      if (edges.length > 0) return setSelectedElement(edges[0]);
+      setSelectedElement(undefined);
+    },
+  });
 
   const nodeColor = (node: Node) => {
     switch (node.type) {
@@ -75,25 +97,10 @@ const Diagram = (props: DiagramProps) => {
     }
   };
 
-  const edgeTypes = useMemo(
-    () => ({
-      dataEdge: DataEdge,
-    }),
-    []
-  );
-
-  const [nodes, setNodes] = useState<Node[]>([]);
-  const [edges, setEdges] = useState<Edge[]>([]);
-
   const {
     isOpen: isOpenMenu,
     onOpen: onOpenMenu,
     onClose: onCloseMenu,
-  } = useDisclosure();
-  const {
-    isOpen: isOpenHost,
-    onOpen: onOpenHost,
-    onClose: onCloseHost,
   } = useDisclosure();
   const {
     isOpen: isOpenProperty,
@@ -103,17 +110,17 @@ const Diagram = (props: DiagramProps) => {
   const [menuPos, setMenuPos] = useState<XYPosition>({ x: 0, y: 0 });
 
   const onNodesChange = useCallback<OnNodesChange>(
-    (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
-    [setNodes]
+    (changes) => applyNodeChanges(changes),
+    [applyNodeChanges]
   );
   const onEdgesChange = useCallback<OnEdgesChange>(
-    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-    [setEdges]
+    (changes) => applyEdgeChanges(changes),
+    [applyEdgeChanges]
   );
 
   const onConnect = useCallback<OnConnect>(
-    (params) => setEdges((eds) => addEdge(params, eds)),
-    []
+    (params) => setEdges(addEdge(params, getReactFlowEdges())),
+    [getReactFlowEdges, setEdges]
   );
 
   const onPaneContextMenu = useCallback<OnPaneContextMenu>(
@@ -135,7 +142,6 @@ const Diagram = (props: DiagramProps) => {
     e.preventDefault();
 
     onCloseMenu();
-    onCloseHost();
   };
 
   const onNodeClick: NodeMouseHandler = (e, node) => {
@@ -146,15 +152,11 @@ const Diagram = (props: DiagramProps) => {
       y: e.clientY,
     };
 
-    console.log(pos);
     fitView({ nodes: [node], duration: 800, minZoom: 4, maxZoom: 6 });
 
     setMenuPos(pos);
     onOpenProperty();
-    onOpenHost();
   };
-
-  const addNode = (n: Node) => setNodes((prev) => [...prev, n]);
 
   useEffect(() => {
     (async () => {
@@ -163,7 +165,7 @@ const Diagram = (props: DiagramProps) => {
       setNodes(render.nodes);
       setEdges(render.edges);
     })();
-  }, []);
+  }, [setEdges, setNodes]);
 
   return (
     <Flex direction={'column'} h="100vh" w="100vw">
@@ -171,8 +173,8 @@ const Diagram = (props: DiagramProps) => {
       <ReactFlow
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        nodes={nodes}
-        edges={edges}
+        nodes={getReactFlowNodes()}
+        edges={getReactFlowEdges()}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeClick={onNodeClick}
@@ -189,13 +191,14 @@ const Diagram = (props: DiagramProps) => {
         coordinate={menuPos}
         isOpen={isOpenMenu}
         onClose={onCloseMenu}
-        addNode={addNode}
       />
       {/* <HostMenu pos={menuPos} isOpen={isOpenHost} onClose={onCloseHost} /> */}
       <PropertySideBar
+        selectedElement={selectedElement}
         isOpen={isOpenProperty}
         onClose={() => {
-          fitView({ nodes: nodes, duration: 800 });
+          fitView({ nodes: getReactFlowNodes(), duration: 800 });
+          resetSelectedElements();
           onCloseProperty();
         }}
       />
