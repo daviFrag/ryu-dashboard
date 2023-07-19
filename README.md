@@ -29,7 +29,13 @@ npm run start
 Access the editor with this url http://localhost:3000
 
 ## Mininet SDN installation:
-Follow instructions in the repo https://dhhdh.com for a fully automated Vagrant installation
+Follow instructions in the repo https://git.comnets.net/public-repo/comnetsemu for a fully automated Vagrant installation
+After the installation enter in the comnetsemu VM and clone this repository in home and start the service
+```
+git clone https://github.com/daviFrag/ryu-dashboard.git
+cd ryu-dashboard
+
+```
 
 ## Sflow dashboard:
 If you want to view network statistics we suggest to install a supported sFlow dashboard
