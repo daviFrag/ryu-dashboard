@@ -414,8 +414,9 @@ class TopologyBuilder:
     def configureSwitches(self, nodes):
         for node in nodes:
             if (NodeType(node.get("type")) == NodeType.SWITCH):
+                ip, _ = self.extractNodeProps(node)
                 switch = self.mn.get(node.get("hostname"))
-                switch.cmd(f"ifconfig {node.get('hostname')} {node.get('ip')}")
+                switch.cmd(f"ifconfig {node.get('hostname')} {ip}")
 
 
 

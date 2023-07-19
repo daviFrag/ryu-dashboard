@@ -36,6 +36,7 @@ export type NetHostNode = NetNode & {
 export type NetSwitchNode = NetNode & {
   type: 'switch';
   subType: 'default' | 'ovk' | 'ivs' | 'user' | 'usern';
+  numNode: number;
   netFlow: boolean;
   sFlow: boolean;
   ip?: string;
@@ -323,6 +324,7 @@ export const useNetStore = create<NetState>()(
         const uuid = v4();
         const switchData: NetSwitchNode = {
           type: 'switch',
+          numNode: numNode,
           subType: 'default',
           netFlow: false,
           sFlow: true,
