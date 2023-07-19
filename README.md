@@ -16,6 +16,25 @@ docker compose up
 ```
 Access the editor with this url http://localhost:3000
 
+Or build it from source:
+Clone the repo and then:
+```
+cd ryu-dashboard
+npm run build
+npm run start
+```
+Access the editor with this url http://localhost:3000
+
+## Mininet SDN installation:
+Follow instructions in the repo https://dhhdh.com for a fully automated Vagrant installation
+
+## Sflow dashboard:
+If you want to view network statistics we suggest to install a supported sFlow dashboard
+
+For Sflow-RT follow instructions -> https://sflow-rt.com/download.php
+
+Then install mininet-dashboard -> https://github.com/sflow-rt/mininet-dashboard
+
 ## Trubleshooting
 If during buildtime with docker you get this error
 ```
