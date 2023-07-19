@@ -3,6 +3,9 @@
 ## Introduction:
 Welcome to the MininetBuilder Git repository! Here you will find a powerful tool designed to enhance your experience with Mininet, a popular software-defined network (SDN) emulator. MininetBuilder offers a range of features, including the ability to effortlessly edit your Mininet network configurations and conveniently visualize network statistics. Additionally, MininetBuilder goes a step further by providing experimental support to configure switches with external protocols like sFlow and NetFlow. This groundbreaking capability allows you to gather detailed flow-level information and gain deeper insights into your network's performance and traffic patterns. Whether you're a network engineer, researcher, or developer, MininetBuilder empowers you to unlock new possibilities and fine-tune your SDN deployments. Get ready to revolutionize your Mininet experience with MininetBuilder!
 
+## Demo:
+Try out MininetBuilder whithout any installation: https://ryu-dashboard.vercel.app
+
 ## Installation:
 ### Gui installation:
 Clone the git repository:
