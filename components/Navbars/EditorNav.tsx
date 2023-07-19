@@ -1,8 +1,7 @@
 import {
+  ArrowForwardIcon,
   ArrowRightIcon,
   CloseIcon,
-  CopyIcon,
-  EditIcon,
   ExternalLinkIcon,
 } from '@chakra-ui/icons';
 import {
@@ -27,7 +26,7 @@ type EditorNavProps = {
 };
 
 export default function EditorNav({ saveFunc }: EditorNavProps) {
-  const { getTopoJson } = useNetStore();
+  const { rearrangeTopo, getTopoJson } = useNetStore();
   const hydrated = useHasHydrated();
 
   const [saveLoading, setSaveLoading] = useState(false);
@@ -67,6 +66,10 @@ export default function EditorNav({ saveFunc }: EditorNavProps) {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [saveFunc]);
 
+  const downloadJson = () => {
+    console.log(getTopoJson());
+  };
+
   return (
     <Nav p={2} bg="gray.200" justify="start">
       <Stack align="start" w="full">
@@ -77,16 +80,36 @@ export default function EditorNav({ saveFunc }: EditorNavProps) {
             className="mr-3"
             alt="Polyglot Logo"
           /> */}
-          <ActionButton
-            label="Save"
-            // disabled={hydrated ? !checkSave : true}
-            onClick={async () => {
-              setSaveLoading(true);
-              await saveFunc();
-              setSaveLoading(false);
-            }}
-            icon={<CopyIcon w={6} h={6} color="blue.500" />}
-            isLoading={saveLoading}
+          <Text
+            fontWeight={'bold'}
+            borderWidth={2}
+            borderColor={'blue.600'}
+            borderRadius={'md'}
+            padding={1}
+            bg={'blue.400'}
+          >
+            Mininet Builder
+          </Text>
+          <DropDown
+            name="File"
+            options={[
+              {
+                name: 'Export JSON',
+                shortcut: '',
+                icon: <ExternalLinkIcon mr={2} />,
+                onClick: downloadJson,
+              },
+            ]}
+          />
+          <DropDown
+            name="View"
+            options={[
+              {
+                name: 'Rearrange Topology',
+                icon: <ArrowRightIcon mr={2} />,
+                onClick: rearrangeTopo,
+              },
+            ]}
           />
           <ActionButton
             label="Deploy"
@@ -95,49 +118,8 @@ export default function EditorNav({ saveFunc }: EditorNavProps) {
               const topo = getTopoJson();
               await loadTopology(topo);
             }}
-            icon={<CopyIcon w={6} h={6} color="blue.500" />}
+            icon={<ArrowForwardIcon w={6} h={6} color="blue.500" />}
             isLoading={saveLoading}
-          />
-          <DropDown
-            name="File"
-            options={[
-              {
-                name: 'Save',
-                shortcut: 'Ctrl+S',
-                icon: <CopyIcon mr={2} />,
-                onClick: async () => {
-                  setSaveLoading(true);
-                  await saveFunc();
-                  setSaveLoading(false);
-                },
-              },
-              {
-                name: 'Export JSON',
-                shortcut: '',
-                icon: <ExternalLinkIcon mr={2} />,
-                onClick: onOpen,
-              },
-            ]}
-          />
-          <DropDown
-            name="Run"
-            options={[
-              {
-                name: 'Run on vscode',
-                icon: <ArrowRightIcon mr={2} />,
-                onClick: onOpenRun,
-              },
-            ]}
-          />
-          <DropDown
-            name="Project"
-            options={[
-              {
-                name: 'Edit Flow',
-                icon: <EditIcon mr={2} />,
-                onClick: onOpenEdit,
-              },
-            ]}
           />
           <Spacer />
           <Button

@@ -1,18 +1,41 @@
-'use client'
+'use client';
 
-import { Heading } from '@chakra-ui/react';
-import Image from 'next/image';
-import BaseNav from '../components/Navbars/BaseNav';
-import switchSvg from '../public/switch.svg';
+import { Flex } from '@chakra-ui/react';
+import { useEffect } from 'react';
+import { Edge, Node } from 'reactflow';
+import Diagram from '../components/Editor/Diagram';
+import { useHasHydrated } from '../utils';
 
-const Home = () => {
+const initGraph = async () => {
+  // await axios.post('http://localhost:7000/topology');
+};
+
+export type Topology = {
+  hosts: string[];
+  controllers: string[];
+  switches: string[];
+  links: string[];
+};
+
+export type Graph = {
+  nodes: Node[];
+  edges: Edge[];
+};
+
+const Graph = () => {
+  const hasHydrated = useHasHydrated();
+
+  useEffect(() => {
+    (async () => {
+      if (hasHydrated) await initGraph();
+    })();
+  }, [hasHydrated]);
+
   return (
-    <>
-      <BaseNav />
-      <Heading>Ciao mondo!</Heading>
-      <Image src={switchSvg.src} width={50} height={50} alt="Polyglot Logo" />
-    </>
+    <Flex h="screen" w="screen">
+      <Diagram />
+    </Flex>
   );
 };
 
-export default Home;
+export default Graph;

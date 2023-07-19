@@ -1,3 +1,4 @@
+import ELK, { ElkNode } from 'elkjs';
 import { enableMapSet, produce } from 'immer';
 import {
   Connection,
@@ -124,6 +125,7 @@ interface NetState {
   createController: (position: XYPosition) => ReactFlowControllerNode;
   createNode: (type: string, position: XYPosition) => ReactFlowNode;
   createEdge: (conn: Connection) => ReactFlowLink;
+  rearrangeTopo: () => Promise<void>;
 }
 
 enableMapSet();
@@ -220,6 +222,65 @@ export const useNetStore = create<NetState>()(
             });
           })
         );
+      },
+
+      async rearrangeTopo() {
+        const state = get();
+        const elk = new ELK();
+        const nodes: ElkNode[] = [];
+
+        nodes.push(
+          ...state.getReactFlowNodes().map((n) => ({
+            ...n,
+            width: 100,
+            height: 100,
+            labels: [{ text: n.data.hostname }],
+          }))
+        );
+
+        const graph = {
+          id: 'root',
+          layoutOptions: {
+            'elk.algorithm': 'mrtree',
+          },
+          children: nodes,
+          edges: state.getReactFlowEdges().map((e) => ({
+            id: v4(),
+            sources: [e.source],
+            targets: [e.target],
+          })),
+        };
+
+        const g = await elk.layout(graph);
+
+        const renderGraph: any = {
+          nodes: !g.children
+            ? []
+            : g.children.map((node) => {
+                return {
+                  ...node,
+                  position: {
+                    x: node.x ?? 0,
+                    y: node.y ?? 0,
+                  },
+                  data: {
+                    label: node.labels?.[0].text ?? '',
+                  },
+                };
+              }),
+          edges: !g.edges
+            ? []
+            : g.edges.map((edge) => {
+                return {
+                  id: edge.id,
+                  source: edge.sources[0],
+                  target: edge.targets[0],
+                };
+              }),
+        };
+
+        state.setNodes(renderGraph.nodes);
+        state.setEdges(renderGraph.edges);
       },
 
       setNodes(nodes) {

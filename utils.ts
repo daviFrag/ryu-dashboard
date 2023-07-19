@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Node } from 'reactflow';
 import { v4 } from 'uuid';
-import { Graph, Topology } from './app/graph/page';
+import { Graph, Topology } from './app/page';
 
 export const useHasHydrated = () => {
   const [hasHydrated, setHasHydrated] = useState<boolean>(false);
