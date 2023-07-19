@@ -6,12 +6,27 @@ from mininet.cli import CLI
 from mininet.clean import Cleanup
 from mininet.node import Host, CPULimitedHost, IVSSwitch, UserSwitch, OVSKernelSwitch, RemoteController, OVSController, Controller
 from mininet.link import Intf, TCLink
-from mininet.util import (netParse, ipAdd)
+from mininet.util import netParse, ipAdd, quietRun
 from nodes import DockerHost
 
 from subprocess import call, Popen, PIPE
 
+from re import match
+from json import dumps
+from os import listdir
+import socket
+from sys import maxsize
+from array import array
+from fcntl import ioctl
+from struct import pack, unpack
+
 from enum import Enum
+
+try:
+  from urllib.request import build_opener, HTTPHandler, Request
+except ImportError:
+  from urllib2 import build_opener, HTTPHandler, Request
+
 
 class NodeType(Enum):
     HOST = "host"
@@ -42,6 +57,9 @@ class TopologyBuilder:
     nflowTarget = "10.0.2.2:9996"
     nflowTimeout = "600"
     nflowAddId = False
+    sFlowCollector = "10.0.2.2"
+    sFlowSampling = "10"
+    sFlowPolling = "10"
 
     def __init__(self):
         lg.setLogLevel('info')
@@ -189,32 +207,32 @@ class TopologyBuilder:
 
     # add generic node
     def addNode(self, node):    #node è un tipo JSON (attributi di node + NodeType)
-        if NodeType(node['type']) == NodeType.HOST:
+        if NodeType(node.get('type')) == NodeType.HOST:
             host = self.addHost(node)
             return host
-        if NodeType(node['type']) == NodeType.SWITCH:
+        if NodeType(node.get('type')) == NodeType.SWITCH:
             switch = self.addSwitch(node)
             return switch
-        if NodeType(node['type']) == NodeType.CONTROLLER:
+        if NodeType(node.get('type')) == NodeType.CONTROLLER:
             controller = self.addController(node)
             return controller
         
     def addHost(self, node):
         ip, defaultRoute = self.extractNodeProps(node)
-        if HostSubTypes(node['subType']) == HostSubTypes.DEFAULT:
+        if HostSubTypes(node.get('subType')) == HostSubTypes.DEFAULT:
             newHost = None
-            if node['cpu'] != None or node['cores'] != None:
-                newhost = self.mn.addHost(node['hostname'],cls=CPULimitedHost, ip=ip, defaultRoute=defaultRoute)
-                if node['cpu'] != None:
-                    newhost.setCPUFrac(f=node['cpu'], sched=node['sched'])
-                if node['cores'] != None:
-                    newhost.setCPUs(cores=node['cores'])
+            if node.get('cpu') != None or node.get('cores') != None:
+                newhost = self.mn.addHost(node.get('hostname'),cls=CPULimitedHost, ip=ip, defaultRoute=defaultRoute)
+                if node.get('cpu') != None:
+                    newhost.setCPUFrac(f=node.get('cpu'), sched=node.get('sched'))
+                if node.get('cores') != None:
+                    newhost.setCPUs(cores=node.get('cores'))
             else:
-                newHost = self.mn.addHost(node['hostname'],cls=Host, ip=ip, defaultRoute=defaultRoute)
+                newHost = self.mn.addHost(node.get('hostname'),cls=Host, ip=ip, defaultRoute=defaultRoute)
 
             if node.get('externalInterfaces') != None:
-                for extInterface in node['externalInterfaces']:
-                    Intf(extInterface, node=node["hostname"] )
+                for extInterface in node.get('externalInterfaces'):
+                    Intf(extInterface, node=node.get("hostname") )
             return newHost
         elif HostSubTypes(node['subType']) == HostSubTypes.DOCKER:
             raise ("Not implented!")
@@ -268,7 +286,7 @@ class TopologyBuilder:
                                     controller=controllerType,
                                     ip=node.get("ip"),
                                     protocol=node.get("protocol"),
-                                    port=node.get("port"))
+                                    port=int(node.get("port")))
     
     def addLink(self, link):
         src = link.get("src")
@@ -335,11 +353,69 @@ class TopologyBuilder:
             call(nflowCmd+nflowSwitches, shell=True)
             self.mn.getNodeByName(node.get("hostname")).cmdPrint("curl 10.0.2.2:9996")
 
+    # TODO: configure switch localy (check if sFlow is enabled)
+    def configSFlow(self, net, collector, ifname, sampling, polling):
+        lg.info("*** Enabling sFlow:\n")
+        sflow = 'ovs-vsctl -- --id=@sflow create sflow agent=%s target=%s sampling=%s polling=%s --' % (ifname,collector,sampling,polling)
+        for s in net.switches:
+            sflow += ' -- set bridge %s sflow=@sflow' % s
+        lg.info(' '.join([s.name for s in net.switches]) + "\n")
+        call(sflow, shell=True)
+
+    def sendTopoSFlow(self, net, agent, collector):
+        lg.info("*** Sending topology\n")
+        topo = {'nodes':{}, 'links':{}}
+        for s in net.switches:
+            topo['nodes'][s.name] = {'agent':agent, 'ports':{}}
+        path = '/sys/devices/virtual/net/'
+        for child in listdir(path):
+            parts = match('(^.+)-(.+)', child)
+            if parts == None: continue
+            if parts.group(1) in topo['nodes']:
+                ifindex = open(path+child+'/ifindex').read().split('\n',1)[0]
+                topo['nodes'][parts.group(1)]['ports'][child] = {'ifindex': ifindex}
+        i = 0
+        for s1 in net.switches:
+            j = 0
+            for s2 in net.switches:
+                if j > i:
+                    intfs = s1.connectionsTo(s2)
+                    for intf in intfs:
+                        s1ifIdx = topo['nodes'][s1.name]['ports'][intf[0].name]['ifindex']
+                        s2ifIdx = topo['nodes'][s2.name]['ports'][intf[1].name]['ifindex']
+                        linkName = '%s-%s' % (s1.name, s2.name)
+                        topo['links'][linkName] = {'node1': s1.name, 'port1': intf[0].name, 'node2': s2.name, 'port2': intf[1].name}
+                j += 1
+            i += 1
+
+        opener = build_opener(HTTPHandler)
+        request = Request('http://%s:8008/topology/json' % collector, data=dumps(topo).encode('utf-8'))
+        request.add_header('Content-Type','application/json')
+        request.get_method = lambda: 'PUT'
+        try:
+            url = opener.open(request)
+        except:
+            lg.info("Unable to send topology")
+
+                
+    def setupSFlow(self):
+        (ifname, agent) = getIfInfo(self.sFlowCollector)
+        self.configSFlow(self.mn,self.sFlowCollector,ifname,self.sFlowSampling,self.sFlowPolling)
+        self.sendTopoSFlow(self.mn,agent,self.sFlowCollector)
+
 
     def postConfiguration(self, nodes):
         self.createVLANIntf(nodes)
-        self.startCommandHosts(nodes)
+        self.configureSwitches(nodes)
         self.setupNetflow(nodes)
+        self.setupSFlow()
+        self.startCommandHosts(nodes)
+
+    def configureSwitches(self, nodes):
+        for node in nodes:
+            if (NodeType(node.get("type")) == NodeType.SWITCH):
+                switch = self.mn.get(node.get("hostname"))
+                switch.cmd(f"ifconfig {node.get('hostname')} {node.get('ip')}")
 
 
 
@@ -353,7 +429,7 @@ class TopologyBuilder:
         else:
             # TODO: set ip base in general config
             ipBaseNum, prefixLen = netParse( self.ipBase )
-            ip = ipAdd(i=node.get('nodeNum'), prefixLen=prefixLen, ipBaseNum=ipBaseNum)
+            ip = ipAdd(i=int(node.get('numNode')), prefixLen=prefixLen, ipBaseNum=ipBaseNum)
         return ip, defaultRoute
         
     # add custom docker host node
@@ -371,4 +447,36 @@ class TopologyBuilder:
     # stop mininet
     def stopMininet(self):
         self.mn.stop()
+
+def getIfInfo(dst):
+    is_64bits = maxsize > 2**32
+    struct_size = 40 if is_64bits else 32
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    max_possible = 8 # initial value
+    while True:
+        bytes = max_possible * struct_size
+        names = array('B')
+        for i in range(0, bytes):
+            names.append(0)
+        outbytes = unpack('iL', ioctl(
+            s.fileno(),
+            0x8912,  # SIOCGIFCONF
+            pack('iL', bytes, names.buffer_info()[0])
+        ))[0]
+        if outbytes == bytes:
+            max_possible *= 2
+        else:
+            break
+    s.connect((dst, 0))
+    ip = s.getsockname()[0]
+    for i in range(0, outbytes, struct_size):
+        addr = socket.inet_ntoa(names[i+20:i+24])
+        if addr == ip:
+            name = names[i:i+16]
+            try:
+                name = name.tobytes().decode('utf-8')
+            except AttributeError:
+                name = name.tostring()
+            name = name.split('\0', 1)[0]
+            return (name,addr)
 
