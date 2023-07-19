@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import ReactFlow, {
   Background,
   Controls,
+  EdgeMouseHandler,
   MiniMap,
   Node,
   NodeMouseHandler,
@@ -11,7 +12,6 @@ import ReactFlow, {
   OnNodesChange,
   ReactFlowProvider,
   XYPosition,
-  addEdge,
   useOnSelectionChange,
   useReactFlow,
   useStoreApi,
@@ -62,7 +62,7 @@ const nodeTypes = {
 
 const Diagram = (props: DiagramProps) => {
   const {
-    selectedElement,
+    createEdge,
     setNodes,
     setEdges,
     getReactFlowEdges,
@@ -122,8 +122,8 @@ const Diagram = (props: DiagramProps) => {
   );
 
   const onConnect = useCallback<OnConnect>(
-    (params) => setEdges(addEdge(params, getReactFlowEdges())),
-    [getReactFlowEdges, setEdges]
+    (params) => createEdge(params),
+    [createEdge]
   );
 
   const onPaneContextMenu = useCallback<OnPaneContextMenu>(
@@ -161,12 +161,33 @@ const Diagram = (props: DiagramProps) => {
     onOpenProperty();
   };
 
+  const onEdgeClick: EdgeMouseHandler = (e, edge) => {
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pos = {
+      x: e.clientX,
+      y: e.clientY,
+    };
+
+    fitView({
+      nodes: getReactFlowNodes().filter(
+        (node) => node.id == edge.source || node.id == edge.target
+      ),
+      duration: 800,
+      minZoom: 2,
+      maxZoom: 4,
+    });
+
+    setMenuPos(pos);
+    onOpenProperty();
+  };
+
   useEffect(() => {
     (async () => {
       const g = new Graph(exampleTopology);
       const render = await g.getRender();
-      setNodes(render.nodes);
-      setEdges(render.edges);
+      // setNodes(render.nodes);
+      // setEdges(render.edges);
     })();
   }, [setEdges, setNodes]);
 
@@ -181,6 +202,7 @@ const Diagram = (props: DiagramProps) => {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeClick={onNodeClick}
+        onEdgeClick={onEdgeClick}
         onConnect={onConnect}
         onPaneClick={onPaneClick}
         onPaneContextMenu={onPaneContextMenu}

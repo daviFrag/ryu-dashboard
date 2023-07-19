@@ -10,6 +10,7 @@ import {
 } from '@chakra-ui/react';
 import { useMemo } from 'react';
 import { useNetStore } from '../../data/zustand/net';
+import EdgeProperties from '../Properties/Edges/EdgeProperties';
 import ControllerNodeProperties from '../Properties/Nodes/ControllerNodeProperties';
 import HostNodeProperties from '../Properties/Nodes/HostNodeProperties';
 import SwitchNodeProperties from '../Properties/Nodes/SwitchNodeProperties';
@@ -39,6 +40,7 @@ export const PropertySideBar = ({ isOpen, onClose }: PropertySideBarProps) => {
   );
 
   const selectedElement = getSelectedElement();
+  console.log(selectedElement);
 
   const PropertyComponent = useMemo(() => {
     switch (selectedElement?.type) {
@@ -48,6 +50,8 @@ export const PropertySideBar = ({ isOpen, onClose }: PropertySideBarProps) => {
         return SwitchNodeProperties;
       case 'controllerNode':
         return ControllerNodeProperties;
+      case 'dataEdge':
+        return EdgeProperties;
       default:
         return Box;
     }

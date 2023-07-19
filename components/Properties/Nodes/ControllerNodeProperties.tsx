@@ -20,6 +20,7 @@ const ControllerNodeProperties = () => {
           <Input
             placeholder="Insert name..."
             value={selectedElement.data.hostname ?? ''}
+            disabled={true}
             onChange={(e) => {
               let updatedNode = JSON.parse(JSON.stringify(selectedElement));
               updatedNode.data['hostname'] = e.currentTarget.value;

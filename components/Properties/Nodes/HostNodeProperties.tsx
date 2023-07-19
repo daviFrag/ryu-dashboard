@@ -11,6 +11,7 @@ import {
   NumberInput,
   NumberInputField,
   NumberInputStepper,
+  Select,
   Slider,
   SliderFilledTrack,
   SliderMark,
@@ -112,6 +113,7 @@ const GeneralForm = () => {
           <Input
             placeholder="Insert hostname..."
             value={selectedElement.data.hostname ?? ''}
+            disabled={true}
             onChange={(e) => {
               let updatedNode = JSON.parse(JSON.stringify(selectedElement));
               updatedNode.data['hostname'] = e.currentTarget.value;
@@ -144,64 +146,87 @@ const GeneralForm = () => {
           />
         </FormControl>
         <FormControl>
-          <FormLabel>CPU Amount:</FormLabel>
-          <Slider
-            id="slider"
-            defaultValue={0}
-            min={0}
-            max={100}
-            // colorScheme="#FFF"
-            value={(selectedElement.data.cpu ?? 0) * 100}
-            fill={'#4762af'}
-            onChange={(v) => {
+          <FormLabel>Scheduler:</FormLabel>
+          <Select
+            placeholder="Select option"
+            value={selectedElement.data.sched ?? 'proc'}
+            onChange={(e) => {
               let updatedNode = JSON.parse(JSON.stringify(selectedElement));
-              updatedNode.data['cpu'] = v / 100;
+              updatedNode.data['sched'] = e.currentTarget.value;
               updateNode(updatedNode);
             }}
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}
           >
-            <SliderMark value={25} mt="1" ml="-2.5" fontSize="sm">
-              25%
-            </SliderMark>
-            <SliderMark value={50} mt="1" ml="-2.5" fontSize="sm">
-              50%
-            </SliderMark>
-            <SliderMark value={75} mt="1" ml="-2.5" fontSize="sm">
-              75%
-            </SliderMark>
-            <SliderTrack>
-              <SliderFilledTrack />
-            </SliderTrack>
-            <Tooltip
-              hasArrow
-              bg="#4762af"
-              color="white"
-              placement="top"
-              isOpen={showTooltip}
-              label={`${(selectedElement.data.cpu ?? 0) * 100}%`}
-            >
-              <SliderThumb />
-            </Tooltip>
-          </Slider>
+            <option value="proc">Proc</option>
+            <option value="cfs">Cfs</option>
+            <option value="rt">Rt</option>
+          </Select>
         </FormControl>
-        <FormControl>
-          <FormLabel>Cores:</FormLabel>
-          <NumberInput defaultValue={0} min={0} max={8}>
-            <NumberInputField
-              value={selectedElement.data.cores ?? 0}
-              onChange={(e) => {
-                let updatedNode = JSON.parse(JSON.stringify(selectedElement));
-                updatedNode.data['cores'] = e.currentTarget.value;
-                updateNode(updatedNode);
-              }}
-            />
-            <NumberInputStepper>
-              <NumberIncrementStepper />
-              <NumberDecrementStepper />
-            </NumberInputStepper>
-          </NumberInput>
-        </FormControl>
+        {selectedElement.data.sched == 'proc' ? null : (
+          <>
+            <FormControl>
+              <FormLabel>CPU Amount:</FormLabel>
+              <Slider
+                id="slider"
+                defaultValue={0}
+                min={0}
+                max={100}
+                // colorScheme="#FFF"
+                value={(selectedElement.data.cpu ?? 0) * 100}
+                fill={'#4762af'}
+                onChange={(v) => {
+                  let updatedNode = JSON.parse(JSON.stringify(selectedElement));
+                  updatedNode.data['cpu'] = v / 100;
+                  updateNode(updatedNode);
+                }}
+                onMouseEnter={() => setShowTooltip(true)}
+                onMouseLeave={() => setShowTooltip(false)}
+              >
+                <SliderMark value={25} mt="1" ml="-2.5" fontSize="sm">
+                  25%
+                </SliderMark>
+                <SliderMark value={50} mt="1" ml="-2.5" fontSize="sm">
+                  50%
+                </SliderMark>
+                <SliderMark value={75} mt="1" ml="-2.5" fontSize="sm">
+                  75%
+                </SliderMark>
+                <SliderTrack>
+                  <SliderFilledTrack />
+                </SliderTrack>
+                <Tooltip
+                  hasArrow
+                  bg="#4762af"
+                  color="white"
+                  placement="top"
+                  isOpen={showTooltip}
+                  label={`${(selectedElement.data.cpu ?? 0) * 100}%`}
+                >
+                  <SliderThumb />
+                </Tooltip>
+              </Slider>
+            </FormControl>
+            <FormControl>
+              <FormLabel>Cores:</FormLabel>
+              <NumberInput defaultValue={0} min={0} max={8}>
+                <NumberInputField
+                  value={selectedElement.data.cores ?? 0}
+                  onChange={(e) => {
+                    let updatedNode = JSON.parse(
+                      JSON.stringify(selectedElement)
+                    );
+                    updatedNode.data['cores'] = e.currentTarget.value;
+                    updateNode(updatedNode);
+                  }}
+                />
+                <NumberInputStepper>
+                  <NumberIncrementStepper />
+                  <NumberDecrementStepper />
+                </NumberInputStepper>
+              </NumberInput>
+            </FormControl>
+          </>
+        )}
+
         <FormControl>
           <FormLabel>Start Command:</FormLabel>
           <Input

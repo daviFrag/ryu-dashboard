@@ -1,7 +1,6 @@
 import { AddIcon } from '@chakra-ui/icons';
 import { Menu, MenuButton, MenuItem, MenuList, Text } from '@chakra-ui/react';
 import { XYPosition, useReactFlow } from 'reactflow';
-import { v4 } from 'uuid';
 import { useNetStore } from '../../data/zustand/net';
 
 export type ContextMenuProps = {
@@ -13,7 +12,7 @@ export type ContextMenuProps = {
 const nodeTypes = ['hostNode', 'switchNode', 'controllerNode'];
 
 const ContextMenu = (props: ContextMenuProps) => {
-  const { addNode } = useNetStore();
+  const { createNode } = useNetStore();
   const { project } = useReactFlow();
 
   return (
@@ -31,13 +30,7 @@ const ContextMenu = (props: ContextMenuProps) => {
           <MenuItem
             key={key}
             onClick={() => {
-              const uuid = v4();
-              addNode({
-                id: uuid,
-                type: type,
-                position: project(props.coordinate),
-                data: { label: type },
-              });
+              createNode(type, project(props.coordinate));
               props.onClose();
             }}
           >

@@ -17,6 +17,8 @@ import {
   useDisclosure,
 } from '@chakra-ui/react';
 import { ReactNode, useEffect, useState } from 'react';
+import { loadTopology } from '../../data/api';
+import { useNetStore } from '../../data/zustand/net';
 import { useHasHydrated } from '../../utils';
 import Nav from '../Layout/Nav';
 
@@ -25,6 +27,7 @@ type EditorNavProps = {
 };
 
 export default function EditorNav({ saveFunc }: EditorNavProps) {
+  const { getTopoJson } = useNetStore();
   const hydrated = useHasHydrated();
 
   const [saveLoading, setSaveLoading] = useState(false);
@@ -81,6 +84,16 @@ export default function EditorNav({ saveFunc }: EditorNavProps) {
               setSaveLoading(true);
               await saveFunc();
               setSaveLoading(false);
+            }}
+            icon={<CopyIcon w={6} h={6} color="blue.500" />}
+            isLoading={saveLoading}
+          />
+          <ActionButton
+            label="Deploy"
+            // disabled={hydrated ? !checkSave : true}
+            onClick={async () => {
+              const topo = getTopoJson();
+              await loadTopology(topo);
             }}
             icon={<CopyIcon w={6} h={6} color="blue.500" />}
             isLoading={saveLoading}

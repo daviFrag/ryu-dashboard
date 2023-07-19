@@ -1,31 +1,36 @@
 import { enableMapSet, produce } from 'immer';
 import {
+  Connection,
   Edge,
   Node,
+  XYPosition,
   applyEdgeChanges as applyReactEdgeChanges,
   applyNodeChanges as applyReactNodeChanges,
 } from 'reactflow';
+import { v4 } from 'uuid';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
 export type NetNode = {
   type: string;
   subType?: string;
-  hostName: string;
+  hostname: string;
+  label: string;
 };
 
 export type NetHostNode = NetNode & {
   type: 'host';
-  ip: string;
+  subType: 'default';
+  ip?: string;
   numNode: number;
-  defaultRoute: string;
-  sched: string;
+  defaultRoute?: string;
+  sched: 'proc' | 'cfs' | 'rt';
   cpu?: number;
   cores?: number;
   startCommand?: string;
   stopCommand?: string;
-  vlanInterfaces: VLANInterface[];
-  externalInterfaces: string[];
+  vlanInterfaces?: VLANInterface[];
+  externalInterfaces?: string[];
 };
 
 export type NetSwitchNode = NetNode & {
@@ -35,15 +40,15 @@ export type NetSwitchNode = NetNode & {
   sFlow: boolean;
   ip?: string;
   dpctl?: string;
-  externalInterfaces: string[];
+  externalInterfaces?: string[];
 };
 
 export type NetControllerNode = NetNode & {
   type: 'controller';
   subType: 'remote' | 'ofr' | 'ovs' | 'ryu';
-  port: number;
+  port?: string;
   protocol: 'tcp' | 'ssl';
-  ip: string;
+  ip?: string;
 };
 
 export type NetLink = {
@@ -113,6 +118,11 @@ interface NetState {
   ) => void;
   getSelectedElement: () => ReactFlowNode | ReactFlowEdge | undefined;
   getTopoJson: () => NetTopology;
+  createHost: (position: XYPosition) => ReactFlowHostNode;
+  createSwitch: (position: XYPosition) => ReactFlowSwitchNode;
+  createController: (position: XYPosition) => ReactFlowControllerNode;
+  createNode: (type: string, position: XYPosition) => ReactFlowNode;
+  createEdge: (conn: Connection) => ReactFlowLink;
 }
 
 enableMapSet();
@@ -247,7 +257,6 @@ export const useNetStore = create<NetState>()(
           produce(state, (draft) => {
             n.data.nodeNum = draft.numNodes++;
             draft.nodeMap.set(node.id, node);
-            draft.numNodes = draft.numNodes + 1;
           })
         );
       },
@@ -259,6 +268,117 @@ export const useNetStore = create<NetState>()(
           links: state.getReactFlowEdges().map((edge) => edge.data),
         };
         return topo;
+      },
+
+      createEdge(conn: Connection) {
+        const state = get();
+        const uuid = v4();
+        conn.sourceHandle;
+        const edgeData: NetLink = {
+          src: state.nodeMap.get(conn.source ?? '')?.data.hostname,
+          dest: state.nodeMap.get(conn.target ?? '')?.data.hostname,
+        };
+        const edge: ReactFlowLink = {
+          id: uuid,
+          type: 'dataEdge',
+          target: conn.target ?? '',
+          source: conn.source ?? '',
+          sourceHandle: conn.sourceHandle,
+          targetHandle: conn.targetHandle,
+          data: edgeData,
+        };
+
+        state.addLink(edge);
+
+        return edge;
+      },
+
+      createHost(position) {
+        const state = get();
+        const numNode = state.numNodes;
+        const uuid = v4();
+        const hostData: NetHostNode = {
+          type: 'host',
+          subType: 'default',
+          numNode: numNode,
+          sched: 'proc',
+          hostname: 'h' + numNode,
+          label: 'h' + numNode,
+        };
+        const host: ReactFlowHostNode = {
+          id: uuid,
+          type: 'hostNode',
+          position: position,
+          data: hostData,
+        };
+
+        state.addNode(host);
+
+        return host;
+      },
+
+      createSwitch(position) {
+        const state = get();
+        const numNode = state.numNodes;
+        const uuid = v4();
+        const switchData: NetSwitchNode = {
+          type: 'switch',
+          subType: 'default',
+          netFlow: false,
+          sFlow: true,
+          hostname: 's' + numNode,
+          label: 's' + numNode,
+        };
+        const switchNode: ReactFlowSwitchNode = {
+          id: uuid,
+          type: 'switchNode',
+          position: position,
+          data: switchData,
+        };
+
+        state.addNode(switchNode);
+
+        return switchNode;
+      },
+
+      createController(position) {
+        const state = get();
+        const numNode = state.numNodes;
+        const uuid = v4();
+        const controllerData: NetControllerNode = {
+          type: 'controller',
+          subType: 'ovs',
+          ip: '127.0.0.1',
+          port: '6633',
+          protocol: 'tcp',
+          hostname: 's' + numNode,
+          label: 's' + numNode,
+        };
+        const controllerNode: ReactFlowControllerNode = {
+          id: uuid,
+          type: 'controllerNode',
+          position: position,
+          data: controllerData,
+        };
+
+        state.addNode(controllerNode);
+
+        return controllerNode;
+      },
+
+      createNode(type, position) {
+        const state = get();
+        switch (type) {
+          case 'hostNode':
+            return state.createHost(position);
+          case 'switchNode':
+            return state.createSwitch(position);
+          case 'controllerNode':
+            return state.createController(position);
+          default:
+            // TODO: fix it
+            return state.createHost(position);
+        }
       },
     }),
     { serialize: { options: { map: true } } }

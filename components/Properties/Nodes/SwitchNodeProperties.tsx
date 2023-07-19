@@ -73,6 +73,7 @@ const GeneralForm = () => {
           <Input
             placeholder="Insert hostname..."
             value={selectedElement.data.hostname ?? ''}
+            disabled={true}
             onChange={(e) => {
               let updatedNode = JSON.parse(JSON.stringify(selectedElement));
               updatedNode.data['hostname'] = e.currentTarget.value;
