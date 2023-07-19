@@ -16,4 +16,15 @@ docker compose up
 ```
 Access the editor with this url http://localhost:3000
 
+## Trubleshooting
+If during buildtime with docker you get this error
+```
+0.182 runc run failed: unable to start container process: can't get final child's PID from pipe: EOF
+```
+try the solution proposed here: https://github.com/moby/moby/issues/40835
+so run: 
+```
+sudo sysctl -w user.max_user_namespaces=15000
+```
+
 
