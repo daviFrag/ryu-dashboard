@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import ReactFlow, {
   Background,
   Controls,
-  Edge,
   MiniMap,
   Node,
   NodeMouseHandler,
@@ -63,23 +62,27 @@ const nodeTypes = {
 
 const Diagram = (props: DiagramProps) => {
   const {
+    selectedElement,
     setNodes,
     setEdges,
     getReactFlowEdges,
     getReactFlowNodes,
     applyNodeChanges,
     applyEdgeChanges,
+    setSelectedElement,
   } = useNetStore();
   const { fitView } = useReactFlow();
 
   const { resetSelectedElements } = useStoreApi().getState();
 
-  const [selectedElement, setSelectedElement] = useState<Node | Edge>();
+  // const [selectedElement, setSelectedElement] = useState<Node | Edge>();
 
   useOnSelectionChange({
     onChange: ({ nodes, edges }) => {
-      if (nodes.length > 0) return setSelectedElement(nodes[0]);
-      if (edges.length > 0) return setSelectedElement(edges[0]);
+      if (nodes.length > 0)
+        return setSelectedElement({ type: 'node', id: nodes[0].id });
+      if (edges.length > 0)
+        return setSelectedElement({ type: 'edge', id: edges[0].id });
       setSelectedElement(undefined);
     },
   });
@@ -194,7 +197,6 @@ const Diagram = (props: DiagramProps) => {
       />
       {/* <HostMenu pos={menuPos} isOpen={isOpenHost} onClose={onCloseHost} /> */}
       <PropertySideBar
-        selectedElement={selectedElement}
         isOpen={isOpenProperty}
         onClose={() => {
           fitView({ nodes: getReactFlowNodes(), duration: 800 });

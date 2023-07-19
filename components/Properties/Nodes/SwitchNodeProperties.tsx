@@ -15,6 +15,7 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import { useState } from 'react';
+import { useNetStore } from '../../../data/zustand/net';
 
 const SwitchNodeProperties = () => {
   return (
@@ -57,57 +58,120 @@ const ExtForm = () => {
 };
 
 const GeneralForm = () => {
+  const { getSelectedElement, updateNode } = useNetStore();
   const [sliderValue, setSliderValue] = useState(5);
   const [showTooltip, setShowTooltip] = useState(false);
+  const selectedElement = getSelectedElement();
+
+  if (!selectedElement) return null;
 
   return (
     <form>
       <VStack mb={5}>
         <FormControl>
           <FormLabel>Hostname:</FormLabel>
-          <Input placeholder="Insert hostname..." />
-        </FormControl>
-        <FormControl>
-          <FormLabel>DPID</FormLabel>
-          <Input placeholder="Insert DPID..." />
+          <Input
+            placeholder="Insert hostname..."
+            value={selectedElement.data.hostname ?? ''}
+            onChange={(e) => {
+              let updatedNode = JSON.parse(JSON.stringify(selectedElement));
+              updatedNode.data['hostname'] = e.currentTarget.value;
+              updateNode(updatedNode);
+            }}
+          />
         </FormControl>
         <FormControl>
           <Flex justifyItems={'center'} gap={2}>
-            <Checkbox />
-            <Text>Enable NetFlow</Text>
+            <Checkbox
+              isChecked={selectedElement.data.netFlow}
+              onChange={(e) => {
+                let updatedNode = JSON.parse(JSON.stringify(selectedElement));
+                updatedNode.data['netFlow'] = e.currentTarget.checked;
+                console.log(e.currentTarget.checked);
+                updateNode(updatedNode);
+              }}
+            />
+            <Text>Enable NetFlow (experimental)</Text>
           </Flex>
         </FormControl>
         <FormControl>
           <Flex justifyItems={'center'} gap={2}>
-            <Checkbox />
+            <Checkbox
+              isChecked={selectedElement.data.sFlow}
+              onChange={(e) => {
+                let updatedNode = JSON.parse(JSON.stringify(selectedElement));
+                updatedNode.data['sFlow'] = e.currentTarget.checked;
+                updateNode(updatedNode);
+              }}
+            />
             <Text>Enable sFlow</Text>
           </Flex>
         </FormControl>
         <FormControl>
           <FormLabel>Switch Type:</FormLabel>
-          <Select placeholder="Select option" defaultValue={'option1'}>
-            <option value="option1">Default</option>
-            <option value="option2">Open vSwitch Kernel Mode</option>
-            <option value="option3">Indigo Virtual Switch</option>
-            <option value="option4">Userspace Switch</option>
-            <option value="option5">Userspace Switch inNamespace</option>
+          <Select
+            placeholder="Select option"
+            value={selectedElement.data.subType ?? 'default'}
+            onChange={(e) => {
+              let updatedNode = JSON.parse(JSON.stringify(selectedElement));
+              updatedNode.data['subType'] = e.currentTarget.value;
+              updateNode(updatedNode);
+            }}
+          >
+            <option value="default">Default</option>
+            <option value="ovk">Open vSwitch Kernel Mode</option>
+            <option value="ivs">Indigo Virtual Switch</option>
+            <option value="user">Userspace Switch</option>
+            <option value="usern">Userspace Switch inNamespace</option>
           </Select>
         </FormControl>
         <FormControl>
           <FormLabel>IP Address:</FormLabel>
-          <Input placeholder="Insert ip idress..." />
+          <Input
+            placeholder="Insert ip idress..."
+            value={selectedElement.data.ip ?? ''}
+            onChange={(e) => {
+              let updatedNode = JSON.parse(JSON.stringify(selectedElement));
+              updatedNode.data['ip'] = e.currentTarget.value;
+              updateNode(updatedNode);
+            }}
+          />
         </FormControl>
         <FormControl>
           <FormLabel>DPCTL port:</FormLabel>
-          <Input placeholder="Insert DPCTL port..." />
+          <Input
+            placeholder="Insert DPCTL port..."
+            value={selectedElement.data.dpctl ?? ''}
+            onChange={(e) => {
+              let updatedNode = JSON.parse(JSON.stringify(selectedElement));
+              updatedNode.data['dpctl'] = e.currentTarget.value;
+              updateNode(updatedNode);
+            }}
+          />
         </FormControl>
         <FormControl>
           <FormLabel>Start Command:</FormLabel>
-          <Input placeholder="Insert start command..." />
+          <Input
+            placeholder="Insert start command..."
+            value={selectedElement.data.startCommand ?? ''}
+            onChange={(e) => {
+              let updatedNode = JSON.parse(JSON.stringify(selectedElement));
+              updatedNode.data['startCommand'] = e.currentTarget.value;
+              updateNode(updatedNode);
+            }}
+          />
         </FormControl>
         <FormControl>
           <FormLabel>Stop Command:</FormLabel>
-          <Input placeholder="Insert stop command..." />
+          <Input
+            placeholder="Insert stop command..."
+            value={selectedElement.data.stopCommand ?? ''}
+            onChange={(e) => {
+              let updatedNode = JSON.parse(JSON.stringify(selectedElement));
+              updatedNode.data['stopCommand'] = e.currentTarget.value;
+              updateNode(updatedNode);
+            }}
+          />
         </FormControl>
       </VStack>
     </form>

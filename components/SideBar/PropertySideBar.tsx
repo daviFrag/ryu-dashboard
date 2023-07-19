@@ -9,24 +9,20 @@ import {
   useBreakpointValue,
 } from '@chakra-ui/react';
 import { useMemo } from 'react';
-import { Edge, Node } from 'reactflow';
-import ControllerNodeProperties from '../Properties/Nodes/ControllerNodeProperties copy';
+import { useNetStore } from '../../data/zustand/net';
+import ControllerNodeProperties from '../Properties/Nodes/ControllerNodeProperties';
 import HostNodeProperties from '../Properties/Nodes/HostNodeProperties';
 import SwitchNodeProperties from '../Properties/Nodes/SwitchNodeProperties';
 
 type PlacementType = SlideOptions['direction'] | 'start' | 'end';
 
 type PropertySideBarProps = {
-  selectedElement: Node | Edge | undefined;
   isOpen: boolean;
   onClose: () => void;
 };
 
-export const PropertySideBar = ({
-  selectedElement,
-  isOpen,
-  onClose,
-}: PropertySideBarProps) => {
+export const PropertySideBar = ({ isOpen, onClose }: PropertySideBarProps) => {
+  const { getSelectedElement } = useNetStore();
   const respPlacement = useBreakpointValue<PlacementType>(
     {
       base: 'bottom',
@@ -41,6 +37,9 @@ export const PropertySideBar = ({
       fallback: 'lg',
     }
   );
+
+  const selectedElement = getSelectedElement();
+
   const PropertyComponent = useMemo(() => {
     switch (selectedElement?.type) {
       case 'hostNode':

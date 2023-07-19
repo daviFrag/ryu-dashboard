@@ -25,6 +25,7 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import { useState } from 'react';
+import { useNetStore } from '../../../data/zustand/net';
 
 const HostNodeProperties = () => {
   return (
@@ -96,34 +97,67 @@ const ExtForm = () => {
 };
 
 const GeneralForm = () => {
-  const [sliderValue, setSliderValue] = useState(5);
+  const { getSelectedElement, updateNode } = useNetStore();
   const [showTooltip, setShowTooltip] = useState(false);
+
+  const selectedElement = getSelectedElement();
+
+  if (!selectedElement) return null;
 
   return (
     <form>
       <VStack mb={5}>
         <FormControl>
           <FormLabel>Hostname:</FormLabel>
-          <Input placeholder="Insert hostname..." />
+          <Input
+            placeholder="Insert hostname..."
+            value={selectedElement.data.hostname ?? ''}
+            onChange={(e) => {
+              let updatedNode = JSON.parse(JSON.stringify(selectedElement));
+              updatedNode.data['hostname'] = e.currentTarget.value;
+              updateNode(updatedNode);
+            }}
+          />
         </FormControl>
         <FormControl>
           <FormLabel>IP Address:</FormLabel>
-          <Input placeholder="Insert ip idress..." />
+          <Input
+            placeholder="Insert ip idress..."
+            value={selectedElement.data.ip ?? ''}
+            onChange={(e) => {
+              let updatedNode = JSON.parse(JSON.stringify(selectedElement));
+              updatedNode.data['ip'] = e.currentTarget.value;
+              updateNode(updatedNode);
+            }}
+          />
         </FormControl>
         <FormControl>
           <FormLabel>Default Route:</FormLabel>
-          <Input placeholder="Insert default route..." />
+          <Input
+            placeholder="Insert default route..."
+            value={selectedElement.data.defaultRoute ?? ''}
+            onChange={(e) => {
+              let updatedNode = JSON.parse(JSON.stringify(selectedElement));
+              updatedNode.data['defaultRoute'] = e.currentTarget.value;
+              updateNode(updatedNode);
+            }}
+          />
         </FormControl>
         <FormControl>
           <FormLabel>CPU Amount:</FormLabel>
           <Slider
             id="slider"
-            defaultValue={5}
+            defaultValue={0}
             min={0}
             max={100}
             // colorScheme="#FFF"
+            value={(selectedElement.data.cpu ?? 0) * 100}
             fill={'#4762af'}
-            onChange={(v) => setSliderValue(v)}
+            onChange={(v) => {
+              let updatedNode = JSON.parse(JSON.stringify(selectedElement));
+              updatedNode.data['cpu'] = v / 100;
+              updateNode(updatedNode);
+            }}
             onMouseEnter={() => setShowTooltip(true)}
             onMouseLeave={() => setShowTooltip(false)}
           >
@@ -145,7 +179,7 @@ const GeneralForm = () => {
               color="white"
               placement="top"
               isOpen={showTooltip}
-              label={`${sliderValue}%`}
+              label={`${(selectedElement.data.cpu ?? 0) * 100}%`}
             >
               <SliderThumb />
             </Tooltip>
@@ -153,8 +187,15 @@ const GeneralForm = () => {
         </FormControl>
         <FormControl>
           <FormLabel>Cores:</FormLabel>
-          <NumberInput defaultValue={1} min={1} max={8}>
-            <NumberInputField />
+          <NumberInput defaultValue={0} min={0} max={8}>
+            <NumberInputField
+              value={selectedElement.data.cores ?? 0}
+              onChange={(e) => {
+                let updatedNode = JSON.parse(JSON.stringify(selectedElement));
+                updatedNode.data['cores'] = e.currentTarget.value;
+                updateNode(updatedNode);
+              }}
+            />
             <NumberInputStepper>
               <NumberIncrementStepper />
               <NumberDecrementStepper />
@@ -163,11 +204,27 @@ const GeneralForm = () => {
         </FormControl>
         <FormControl>
           <FormLabel>Start Command:</FormLabel>
-          <Input placeholder="Insert start command..." />
+          <Input
+            placeholder="Insert start command..."
+            value={selectedElement.data.startCommand ?? ''}
+            onChange={(e) => {
+              let updatedNode = JSON.parse(JSON.stringify(selectedElement));
+              updatedNode.data['startCommand'] = e.currentTarget.value;
+              updateNode(updatedNode);
+            }}
+          />
         </FormControl>
         <FormControl>
           <FormLabel>Stop Command:</FormLabel>
-          <Input placeholder="Insert stop command..." />
+          <Input
+            placeholder="Insert stop command..."
+            value={selectedElement.data.stopCommand ?? ''}
+            onChange={(e) => {
+              let updatedNode = JSON.parse(JSON.stringify(selectedElement));
+              updatedNode.data['stopCommand'] = e.currentTarget.value;
+              updateNode(updatedNode);
+            }}
+          />
         </FormControl>
       </VStack>
     </form>

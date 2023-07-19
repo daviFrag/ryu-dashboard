@@ -17,6 +17,7 @@ export type NetNode = {
 export type NetHostNode = NetNode & {
   type: 'host';
   ip: string;
+  numNode: number;
   defaultRoute: string;
   sched: string;
   cpu?: number;
@@ -30,8 +31,8 @@ export type NetHostNode = NetNode & {
 export type NetSwitchNode = NetNode & {
   type: 'switch';
   subType: 'default' | 'ovk' | 'ivs' | 'user' | 'usern';
-  enableNetFlow: boolean;
-  enableSFlow: boolean;
+  netFlow: boolean;
+  sFlow: boolean;
   ip?: string;
   dpctl?: string;
   externalInterfaces: string[];
@@ -40,7 +41,7 @@ export type NetSwitchNode = NetNode & {
 export type NetControllerNode = NetNode & {
   type: 'controller';
   subType: 'remote' | 'ofr' | 'ovs' | 'ryu';
-  controllerPort: number;
+  port: number;
   protocol: 'tcp' | 'ssl';
   ip: string;
 };
@@ -85,6 +86,12 @@ interface NetState {
   numNodes: number;
   nodeMap: Map<string, ReactFlowNode>;
   linkMap: Map<string, ReactFlowEdge>;
+  selectedElement:
+    | {
+        type: 'node' | 'edge';
+        id: string;
+      }
+    | undefined;
   addNode: (node: ReactFlowNode) => void;
   addLink: (link: ReactFlowEdge) => void;
   getTopology: () => NetTopology;
@@ -96,115 +103,164 @@ interface NetState {
   getReactFlowEdges: () => ReactFlowEdge[];
   applyNodeChanges: (changes: any[]) => void;
   applyEdgeChanges: (changes: any[]) => void;
+  setSelectedElement: (
+    element:
+      | {
+          type: 'node' | 'edge';
+          id: string;
+        }
+      | undefined
+  ) => void;
+  getSelectedElement: () => ReactFlowNode | ReactFlowEdge | undefined;
+  getTopoJson: () => NetTopology;
 }
 
 enableMapSet();
 
 export const useNetStore = create<NetState>()(
-  devtools((set, get) => ({
-    numNodes: 0,
-    nodeMap: new Map<string, ReactFlowNode>(),
-    linkMap: new Map<string, ReactFlowEdge>(),
+  devtools(
+    (set, get) => ({
+      numNodes: 0,
+      nodeMap: new Map<string, ReactFlowNode>(),
+      linkMap: new Map<string, ReactFlowEdge>(),
+      selectedElement: undefined as
+        | {
+            type: 'node' | 'edge';
+            id: string;
+          }
+        | undefined,
 
-    getReactFlowNodes: () => Array.from(get().nodeMap.values()),
-    getReactFlowEdges: () => Array.from(get().linkMap.values()),
+      getReactFlowNodes: () => Array.from(get().nodeMap.values()),
+      getReactFlowEdges: () => Array.from(get().linkMap.values()),
 
-    updateNode(node) {
-      set((state) =>
-        produce(state, (draft) => {
-          draft.nodeMap.set(node.id, node);
-        })
-      );
-    },
-
-    updateEdge(edge) {
-      set((state) =>
-        produce(state, (draft) => {
-          draft.linkMap.set(edge.id, edge);
-        })
-      );
-    },
-
-    getTopology() {
-      const state = get();
-      const topo: NetTopology = { nodes: [], links: [] };
-      state.nodeMap.forEach((node) => topo.nodes.push(node.data));
-      state.linkMap.forEach((edge) => topo.links.push(edge.data));
-
-      return topo;
-    },
-
-    applyNodeChanges(changes) {
-      set((state) =>
-        produce(state, (draft) => {
-          const nodes = applyReactNodeChanges(
-            changes,
-            state.getReactFlowNodes()
-          );
-          changes.forEach((c) => {
-            const node = nodes.find((node) => c.id === node.id);
-            if (node) {
-              draft.nodeMap.set(node.id, node);
-            }
-          });
-        })
-      );
-    },
-
-    applyEdgeChanges(changes) {
-      set((state) =>
-        produce(state, (draft) => {
-          const edges = applyReactEdgeChanges(
-            changes,
-            state.getReactFlowEdges()
-          );
-          changes.forEach((c) => {
-            const edge = edges.find((edge) => c.id === edge.id);
-            if (edge) {
-              draft.linkMap.set(edge.id, edge);
-            }
-          });
-        })
-      );
-    },
-
-    setNodes(nodes) {
-      set((state) => {
-        const newNodeMap = new Map<string, ReactFlowNode>(
-          nodes.map((node) => [node.id, node])
+      updateNode(node) {
+        set((state) =>
+          produce(state, (draft) => {
+            draft.nodeMap.set(node.id, node);
+          })
         );
-        return {
-          nodeMap: newNodeMap,
-          numNodes: nodes.length,
-        };
-      });
-    },
+      },
 
-    setEdges(edges) {
-      set((state) => {
-        const newLinkMap = new Map<string, ReactFlowEdge>(
-          edges.map((edge) => [edge.id, edge])
+      updateEdge(edge) {
+        set((state) =>
+          produce(state, (draft) => {
+            draft.linkMap.set(edge.id, edge);
+          })
         );
-        return {
-          linkMap: newLinkMap,
-        };
-      });
-    },
+      },
 
-    addLink(link) {
-      set((state) =>
-        produce(state, (draft) => {
-          draft.linkMap.set(link.id, link);
-        })
-      );
-    },
-    addNode(node) {
-      set((state) =>
-        produce(state, (draft) => {
-          draft.nodeMap.set(node.id, node);
-          draft.numNodes = draft.numNodes + 1;
-        })
-      );
-    },
-  }))
+      setSelectedElement(element) {
+        set((_) => ({
+          selectedElement: element,
+        }));
+      },
+
+      getSelectedElement() {
+        const state = get();
+        if (!state.selectedElement) return undefined;
+        switch (state.selectedElement.type) {
+          case 'edge':
+            return state.linkMap.get(state.selectedElement?.id);
+          case 'node':
+            return state.nodeMap.get(state.selectedElement?.id);
+          default:
+            return undefined;
+        }
+      },
+
+      getTopology() {
+        const state = get();
+        const topo: NetTopology = { nodes: [], links: [] };
+        state.nodeMap.forEach((node) => topo.nodes.push(node.data));
+        state.linkMap.forEach((edge) => topo.links.push(edge.data));
+
+        return topo;
+      },
+
+      applyNodeChanges(changes) {
+        set((state) =>
+          produce(state, (draft) => {
+            const nodes = applyReactNodeChanges(
+              changes,
+              state.getReactFlowNodes()
+            );
+            changes.forEach((c) => {
+              const node = nodes.find((node) => c.id === node.id);
+              if (node) {
+                draft.nodeMap.set(node.id, node);
+              }
+            });
+          })
+        );
+      },
+
+      applyEdgeChanges(changes) {
+        set((state) =>
+          produce(state, (draft) => {
+            const edges = applyReactEdgeChanges(
+              changes,
+              state.getReactFlowEdges()
+            );
+            changes.forEach((c) => {
+              const edge = edges.find((edge) => c.id === edge.id);
+              if (edge) {
+                draft.linkMap.set(edge.id, edge);
+              }
+            });
+          })
+        );
+      },
+
+      setNodes(nodes) {
+        set((state) => {
+          const newNodeMap = new Map<string, ReactFlowNode>(
+            nodes.map((node) => [node.id, node])
+          );
+          return {
+            nodeMap: newNodeMap,
+            numNodes: nodes.length,
+          };
+        });
+      },
+
+      setEdges(edges) {
+        set((state) => {
+          const newLinkMap = new Map<string, ReactFlowEdge>(
+            edges.map((edge) => [edge.id, edge])
+          );
+          return {
+            linkMap: newLinkMap,
+          };
+        });
+      },
+
+      addLink(link) {
+        set((state) =>
+          produce(state, (draft) => {
+            draft.linkMap.set(link.id, link);
+          })
+        );
+      },
+      addNode(node) {
+        let n = JSON.parse(JSON.stringify(node));
+        set((state) =>
+          produce(state, (draft) => {
+            n.data.nodeNum = draft.numNodes++;
+            draft.nodeMap.set(node.id, node);
+            draft.numNodes = draft.numNodes + 1;
+          })
+        );
+      },
+
+      getTopoJson() {
+        const state = get();
+        const topo = {
+          nodes: state.getReactFlowNodes().map((node) => node.data),
+          links: state.getReactFlowEdges().map((edge) => edge.data),
+        };
+        return topo;
+      },
+    }),
+    { serialize: { options: { map: true } } }
+  )
 );
