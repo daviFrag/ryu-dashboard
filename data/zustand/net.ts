@@ -1,4 +1,4 @@
-import ELK, { ElkNode } from 'elkjs';
+import ELK from 'elkjs';
 import { enableMapSet, produce } from 'immer';
 import {
   Connection,
@@ -125,7 +125,7 @@ interface NetState {
   createController: (position: XYPosition) => ReactFlowControllerNode;
   createNode: (type: string, position: XYPosition) => ReactFlowNode;
   createEdge: (conn: Connection) => ReactFlowLink;
-  rearrangeTopo: () => Promise<void>;
+  rearrangeTopo: (algo: string) => Promise<void>;
 }
 
 enableMapSet();
@@ -224,28 +224,20 @@ export const useNetStore = create<NetState>()(
         );
       },
 
-      async rearrangeTopo() {
+      async rearrangeTopo(algo: string = 'mrtree') {
         const state = get();
         const elk = new ELK();
-        const nodes: ElkNode[] = [];
-
-        nodes.push(
-          ...state.getReactFlowNodes().map((n) => ({
-            ...n,
-            width: 100,
-            height: 100,
-            labels: [{ text: n.data.hostname }],
-          }))
-        );
 
         const graph = {
           id: 'root',
           layoutOptions: {
-            'elk.algorithm': 'mrtree',
+            'elk.algorithm': algo,
           },
-          children: nodes,
+          children: state.getReactFlowNodes().map((n) => ({
+            ...JSON.parse(JSON.stringify(n)),
+          })),
           edges: state.getReactFlowEdges().map((e) => ({
-            id: v4(),
+            ...JSON.parse(JSON.stringify(e)),
             sources: [e.source],
             targets: [e.target],
           })),
@@ -263,18 +255,13 @@ export const useNetStore = create<NetState>()(
                     x: node.x ?? 0,
                     y: node.y ?? 0,
                   },
-                  data: {
-                    label: node.labels?.[0].text ?? '',
-                  },
                 };
               }),
           edges: !g.edges
             ? []
             : g.edges.map((edge) => {
                 return {
-                  id: edge.id,
-                  source: edge.sources[0],
-                  target: edge.targets[0],
+                  ...edge,
                 };
               }),
         };
@@ -371,6 +358,8 @@ export const useNetStore = create<NetState>()(
           id: uuid,
           type: 'hostNode',
           position: position,
+          width: 100,
+          height: 100,
           data: hostData,
         };
 
@@ -396,6 +385,8 @@ export const useNetStore = create<NetState>()(
           id: uuid,
           type: 'switchNode',
           position: position,
+          width: 100,
+          height: 100,
           data: switchData,
         };
 
@@ -421,6 +412,8 @@ export const useNetStore = create<NetState>()(
           id: uuid,
           type: 'controllerNode',
           position: position,
+          width: 100,
+          height: 100,
           data: controllerData,
         };
 
