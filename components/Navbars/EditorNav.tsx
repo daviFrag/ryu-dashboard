@@ -67,7 +67,7 @@ export default function EditorNav({}: EditorNavProps) {
             src={''}
             width={['30px']}
             className="mr-3"
-            alt="Polyglot Logo"
+            alt="Logo"
           /> */}
           <Text
             fontWeight={'bold'}
@@ -136,8 +136,23 @@ export default function EditorNav({}: EditorNavProps) {
                 onClick: async () => {
                   try {
                     const topo = getTopoJson();
-
+                    toast({
+                      title: 'Loading SDN..',
+                      description: 'Loading network inside the VM',
+                      status: 'info',
+                      duration: 3000,
+                      position: 'bottom-left',
+                      isClosable: true,
+                    });
                     await loadTopology(topo);
+                    toast({
+                      title: 'Deploy completed',
+                      description: 'The deploy was successful',
+                      status: 'success',
+                      duration: 3000,
+                      position: 'bottom-left',
+                      isClosable: true,
+                    });
                   } catch (err) {
                     toast({
                       title: 'Internal Error',
