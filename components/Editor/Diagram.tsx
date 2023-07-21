@@ -193,7 +193,7 @@ const Diagram = (props: DiagramProps) => {
 
   return (
     <Flex direction={'column'} h="100vh" w="100vw">
-      <EditorNav saveFunc={async () => void 0} />
+      <EditorNav />
       <ReactFlow
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
@@ -226,6 +226,7 @@ const Diagram = (props: DiagramProps) => {
           onCloseProperty();
         }}
       />
+      {/* <TerminalPanel /> */}
     </Flex>
   );
 };
