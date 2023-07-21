@@ -43,8 +43,10 @@ const EdgeProperties = () => {
           <FormLabel>Bandwidth: </FormLabel>
           <Flex justifyItems={'center'} alignItems={'center'} gap={2}>
             <NumberInput
+              min={0}
+              max={1000}
               value={selectedElement.data.bw ?? ''}
-              onChange={(value) => {
+              onChange={(_, value) => {
                 let updatedEdge = JSON.parse(JSON.stringify(selectedElement));
                 updatedEdge.data['bw'] = value;
                 updateEdge(updatedEdge);
@@ -64,7 +66,7 @@ const EdgeProperties = () => {
           <Flex justifyItems={'center'} alignItems={'center'} gap={2}>
             <NumberInput
               value={selectedElement.data.delay ?? ''}
-              onChange={(value) => {
+              onChange={(_, value) => {
                 let updatedEdge = JSON.parse(JSON.stringify(selectedElement));
                 updatedEdge.data['delay'] = value;
                 updateEdge(updatedEdge);
@@ -80,18 +82,18 @@ const EdgeProperties = () => {
           </Flex>
         </FormControl>
         <FormControl>
-          <FormLabel>Delay:</FormLabel>
+          <FormLabel>Loss:</FormLabel>
           <Slider
             id="slider"
             defaultValue={0}
             min={0}
             max={100}
             // colorScheme="#FFF"
-            value={(selectedElement.data.loss ?? 0) * 100}
+            value={selectedElement.data.loss ?? 0}
             fill={'#4762af'}
             onChange={(v) => {
               let updatedEdge = JSON.parse(JSON.stringify(selectedElement));
-              updatedEdge.data['loss'] = v / 100;
+              updatedEdge.data['loss'] = v;
               updateEdge(updatedEdge);
             }}
             onMouseEnter={() => setShowTooltip(true)}
@@ -115,7 +117,7 @@ const EdgeProperties = () => {
               color="white"
               placement="top"
               isOpen={showTooltip}
-              label={`${(selectedElement.data.loss ?? 0) * 100}%`}
+              label={`${selectedElement.data.loss ?? 0}%`}
             >
               <SliderThumb />
             </Tooltip>

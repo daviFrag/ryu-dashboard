@@ -292,7 +292,7 @@ class TopologyBuilder:
         src = link.get("src")
         dest = link.get("dest")
 
-        bw = link.get("bandwidth")
+        bw = link.get("bw")
         delay = link.get("delay")
         loss = link.get("loss")
         

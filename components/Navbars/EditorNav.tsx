@@ -1,9 +1,6 @@
-import {
-  ArrowForwardIcon,
-  ArrowRightIcon,
-  CloseIcon,
-  ExternalLinkIcon,
-} from '@chakra-ui/icons';
+'use client';
+
+import { ArrowRightIcon, CloseIcon, ExternalLinkIcon } from '@chakra-ui/icons';
 import {
   Box,
   Button,
@@ -14,38 +11,21 @@ import {
   Text,
   Tooltip,
   useDisclosure,
+  useToast,
 } from '@chakra-ui/react';
-import { ReactNode, useEffect, useState } from 'react';
-import { loadTopology } from '../../data/api';
+import { ReactNode, useEffect } from 'react';
+import { useReactFlow } from 'reactflow';
+import { BACK_URL, loadTopology } from '../../data/api';
 import { useNetStore } from '../../data/zustand/net';
-import { useHasHydrated } from '../../utils';
 import Nav from '../Layout/Nav';
 
-type EditorNavProps = {
-  saveFunc: () => Promise<void>;
-};
+type EditorNavProps = {};
 
-export default function EditorNav({ saveFunc }: EditorNavProps) {
-  const { rearrangeTopo, getTopoJson } = useNetStore();
-  const hydrated = useHasHydrated();
+export default function EditorNav({}: EditorNavProps) {
+  const { rearrangeTopo, getTopoJson, getReactFlowNodes } = useNetStore();
+  const { fitView } = useReactFlow();
 
-  const [saveLoading, setSaveLoading] = useState(false);
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const {
-    isOpen: isOpenRun,
-    onOpen: onOpenRun,
-    onClose: onCloseRun,
-  } = useDisclosure();
-  const {
-    isOpen: isOpenEdit,
-    onOpen: onOpenEdit,
-    onClose: onCloseEdit,
-  } = useDisclosure();
-  const {
-    isOpen: isOpenSave,
-    onOpen: onOpenSave,
-    onClose: onCloseSave,
-  } = useDisclosure();
+  const toast = useToast();
 
   useEffect(() => {
     const isMac =
@@ -56,18 +36,27 @@ export default function EditorNav({ saveFunc }: EditorNavProps) {
     async function onKeyDown(e: KeyboardEvent) {
       if (e.key.toLowerCase() === 's' && (isMac ? e.metaKey : e.ctrlKey)) {
         e.preventDefault();
-        setSaveLoading(true);
-        await saveFunc();
-        setSaveLoading(false);
+      }
+      // if (e.key.toLowerCase() === 'z' && (isMac ? e.metaKey : e.ctrlKey)) {
+      //   e.preventDefault();
+      // }
+      // if (e.key.toLowerCase() === 'y' && (isMac ? e.metaKey : e.ctrlKey)) {
+      //   e.preventDefault();
+      // }
+      if (e.key.toLowerCase() === 'f5' && (isMac ? e.metaKey : e.ctrlKey)) {
+        e.preventDefault();
       }
     }
 
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [saveFunc]);
+  }, []);
 
-  const downloadJson = () => {
-    console.log(getTopoJson());
+  const reorderGraph = (algo: string) => {
+    return async () => {
+      await rearrangeTopo(algo);
+      fitView({ nodes: getReactFlowNodes(), duration: 800 });
+    };
   };
 
   return (
@@ -97,21 +86,83 @@ export default function EditorNav({ saveFunc }: EditorNavProps) {
                 name: 'Export JSON',
                 shortcut: '',
                 icon: <ExternalLinkIcon mr={2} />,
-                onClick: downloadJson,
+                onClick: () => {
+                  window.open(
+                    BACK_URL +
+                      '/api/topology/download?json=' +
+                      btoa(JSON.stringify(getTopoJson()))
+                  );
+                },
               },
             ]}
           />
+          {/* TODO: next feature */}
+          {/* <DropDown
+            name="Edit"
+            options={[
+              {
+                name: 'Undo',
+                shortcut: 'Ctrl+Z',
+                // onClick: downloadJson,
+              },
+              {
+                name: 'Redo',
+                shortcut: 'Ctrl+Y',
+                // onClick: downloadJson,
+              },
+            ]}
+          /> */}
           <DropDown
             name="View"
             options={[
               {
-                name: 'Rearrange Topology',
+                name: 'Rearrange Topology: Tree algorithm',
                 icon: <ArrowRightIcon mr={2} />,
-                onClick: rearrangeTopo,
+                onClick: reorderGraph('mrtree'),
+              },
+              {
+                name: 'Rearrange Topology: Radial algorithm',
+                icon: <ArrowRightIcon mr={2} />,
+                onClick: reorderGraph('radial'),
               },
             ]}
           />
-          <ActionButton
+          <DropDown
+            name="Run"
+            options={[
+              {
+                name: 'Deploy network',
+                shortcut: 'Ctrl+F5',
+                onClick: async () => {
+                  try {
+                    const topo = getTopoJson();
+
+                    await loadTopology(topo);
+                  } catch (err) {
+                    toast({
+                      title: 'Internal Error',
+                      description: 'Try later',
+                      status: 'error',
+                      duration: 3000,
+                      position: 'bottom-left',
+                      isClosable: true,
+                    });
+                  }
+                },
+              },
+            ]}
+          />
+          <DropDown
+            name="Terminal"
+            options={[
+              {
+                name: 'New Mininet Terminal',
+                shortcut: 'Ctrl+T',
+                // onClick: downloadJson,
+              },
+            ]}
+          />
+          {/* <ActionButton
             label="Deploy"
             // disabled={hydrated ? !checkSave : true}
             onClick={async () => {
@@ -120,7 +171,7 @@ export default function EditorNav({ saveFunc }: EditorNavProps) {
             }}
             icon={<ArrowForwardIcon w={6} h={6} color="blue.500" />}
             isLoading={saveLoading}
-          />
+          /> */}
           <Spacer />
           <Button
             leftIcon={<CloseIcon />}
@@ -215,28 +266,30 @@ const DropDown = ({
         roundedTopLeft={'none'}
         zIndex={10}
       >
-        {options.map((val, id) => (
-          <Box
-            key={id}
-            color="black"
-            bg={'transparent'}
-            p={2}
-            _hover={{ bg: 'gray.200' }}
-            onClick={() => {
-              val.onClick?.();
-              onToggle();
-            }}
-          >
-            <Flex align={'center'}>
-              {val?.icon}
-              <Text>{val.name}</Text>
-              <Spacer minW={10} />
-              <Text fontSize={'sm'} fontWeight={'semibold'} color="gray.500">
-                {val.shortcut}
-              </Text>
-            </Flex>
-          </Box>
-        ))}
+        {isOpen &&
+          options.map((val, id) => (
+            <Box
+              role="button"
+              key={id}
+              color="black"
+              bg={'transparent'}
+              p={2}
+              _hover={{ bg: 'gray.200' }}
+              onClick={() => {
+                val.onClick?.();
+                onToggle();
+              }}
+            >
+              <Flex align={'center'}>
+                {val?.icon}
+                <Text>{val.name}</Text>
+                <Spacer minW={10} />
+                <Text fontSize={'sm'} fontWeight={'semibold'} color="gray.500">
+                  {val.shortcut}
+                </Text>
+              </Flex>
+            </Box>
+          ))}
       </Box>
     </Box>
   );

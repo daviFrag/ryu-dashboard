@@ -401,7 +401,7 @@ export const useNetStore = create<NetState>()(
         const uuid = v4();
         const controllerData: NetControllerNode = {
           type: 'controller',
-          subType: 'ovs',
+          subType: 'ofr',
           ip: '127.0.0.1',
           port: '6633',
           protocol: 'tcp',
