@@ -1,0 +1,7 @@
+.react-terminal::-webkit-scrollbar {
+  display: none;
+}
+
+.react-terminal-wrapper {
+  border-radius: 0 !important;
+}

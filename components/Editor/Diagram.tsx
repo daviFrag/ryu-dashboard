@@ -1,5 +1,5 @@
 import { Flex, useDisclosure } from '@chakra-ui/react';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -18,7 +18,6 @@ import ReactFlow, {
 } from 'reactflow';
 
 import 'reactflow/dist/style.css';
-import { Graph } from '../../data/models/Graph';
 import { useNetStore } from '../../data/zustand/net';
 import DataEdge from '../Edges/DataEdge';
 import ContextMenu from '../Menu/ContextMenu';
@@ -27,28 +26,11 @@ import ControllerNode from '../Nodes/ControllerNode';
 import HostNode from '../Nodes/HostNode';
 import SwitchNode from '../Nodes/SwitchNode';
 import { PropertySideBar } from '../SideBar/PropertySideBar';
+import { TerminalPanel } from '../Terminal';
 
 export type OnPaneContextMenu = (event: React.MouseEvent) => void;
 
 export type DiagramProps = {};
-
-const exampleTopology = {
-  hosts: ['h0', 'h1', 'h2', 'h3', 'h4'],
-  switches: ['s0', 's1', 's2', 's3', 's4', 's5'],
-  controllers: [],
-  links: [
-    's0-s1',
-    's1-s2',
-    's2-s3',
-    's3-s4',
-    's0-s5',
-    's0-h0',
-    's0-h1',
-    's0-h2',
-    's1-h3',
-    's1-h4',
-  ],
-};
 
 const edgeTypes = {
   dataEdge: DataEdge,
@@ -60,11 +42,9 @@ const nodeTypes = {
   controllerNode: ControllerNode,
 };
 
-const Diagram = (props: DiagramProps) => {
+const Diagram = ({}: DiagramProps) => {
   const {
     createEdge,
-    setNodes,
-    setEdges,
     getReactFlowEdges,
     getReactFlowNodes,
     applyNodeChanges,
@@ -101,6 +81,11 @@ const Diagram = (props: DiagramProps) => {
   };
 
   const {
+    isOpen: isOpenTerminal,
+    onOpen: onOpenTerminal,
+    onClose: onCloseTerminal,
+  } = useDisclosure();
+  const {
     isOpen: isOpenMenu,
     onOpen: onOpenMenu,
     onClose: onCloseMenu,
@@ -130,7 +115,7 @@ const Diagram = (props: DiagramProps) => {
     (e) => {
       e.preventDefault();
 
-      const rect = e.currentTarget.getBoundingClientRect();
+      // const rect = e.currentTarget.getBoundingClientRect();
       const pos = {
         x: e.clientX,
         y: e.clientY,
@@ -149,7 +134,7 @@ const Diagram = (props: DiagramProps) => {
 
   const onNodeClick: NodeMouseHandler = (e, node) => {
     e.preventDefault();
-    const rect = e.currentTarget.getBoundingClientRect();
+    // const rect = e.currentTarget.getBoundingClientRect();
     const pos = {
       x: e.clientX,
       y: e.clientY,
@@ -163,7 +148,7 @@ const Diagram = (props: DiagramProps) => {
 
   const onEdgeClick: EdgeMouseHandler = (e, edge) => {
     e.preventDefault();
-    const rect = e.currentTarget.getBoundingClientRect();
+    // const rect = e.currentTarget.getBoundingClientRect();
     const pos = {
       x: e.clientX,
       y: e.clientY,
@@ -182,18 +167,9 @@ const Diagram = (props: DiagramProps) => {
     onOpenProperty();
   };
 
-  useEffect(() => {
-    (async () => {
-      const g = new Graph(exampleTopology);
-      const render = await g.getRender();
-      // setNodes(render.nodes);
-      // setEdges(render.edges);
-    })();
-  }, [setEdges, setNodes]);
-
   return (
     <Flex direction={'column'} h="100vh" w="100vw">
-      <EditorNav />
+      <EditorNav onOpenTerminal={onOpenTerminal} />
       <ReactFlow
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
@@ -217,7 +193,6 @@ const Diagram = (props: DiagramProps) => {
         isOpen={isOpenMenu}
         onClose={onCloseMenu}
       />
-      {/* <HostMenu pos={menuPos} isOpen={isOpenHost} onClose={onCloseHost} /> */}
       <PropertySideBar
         isOpen={isOpenProperty}
         onClose={() => {
@@ -226,7 +201,7 @@ const Diagram = (props: DiagramProps) => {
           onCloseProperty();
         }}
       />
-      {/* <TerminalPanel /> */}
+      <TerminalPanel isOpen={isOpenTerminal} onClose={onCloseTerminal} />
     </Flex>
   );
 };

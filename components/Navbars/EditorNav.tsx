@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRightIcon, CloseIcon, ExternalLinkIcon } from '@chakra-ui/icons';
+import { ArrowRightIcon, ExternalLinkIcon } from '@chakra-ui/icons';
 import {
   Box,
   Button,
@@ -9,19 +9,20 @@ import {
   Spacer,
   Stack,
   Text,
-  Tooltip,
   useDisclosure,
   useToast,
 } from '@chakra-ui/react';
-import { ReactNode, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useReactFlow } from 'reactflow';
 import { BACK_URL, loadTopology } from '../../data/api';
 import { useNetStore } from '../../data/zustand/net';
 import Nav from '../Layout/Nav';
 
-type EditorNavProps = {};
+type EditorNavProps = {
+  onOpenTerminal: () => void;
+};
 
-export default function EditorNav({}: EditorNavProps) {
+export default function EditorNav({ onOpenTerminal }: EditorNavProps) {
   const { rearrangeTopo, getTopoJson, getReactFlowNodes } = useNetStore();
   const { fitView } = useReactFlow();
 
@@ -37,6 +38,7 @@ export default function EditorNav({}: EditorNavProps) {
       if (e.key.toLowerCase() === 's' && (isMac ? e.metaKey : e.ctrlKey)) {
         e.preventDefault();
       }
+      // TODO: new features
       // if (e.key.toLowerCase() === 'z' && (isMac ? e.metaKey : e.ctrlKey)) {
       //   e.preventDefault();
       // }
@@ -63,12 +65,6 @@ export default function EditorNav({}: EditorNavProps) {
     <Nav p={2} bg="gray.200" justify="start">
       <Stack align="start" w="full">
         <HStack w="full">
-          {/* <Image
-            src={''}
-            width={['30px']}
-            className="mr-3"
-            alt="Logo"
-          /> */}
           <Text
             fontWeight={'bold'}
             borderWidth={2}
@@ -96,7 +92,7 @@ export default function EditorNav({}: EditorNavProps) {
               },
             ]}
           />
-          {/* TODO: next feature */}
+          {/* TODO: next features */}
           {/* <DropDown
             name="Edit"
             options={[
@@ -173,69 +169,15 @@ export default function EditorNav({}: EditorNavProps) {
               {
                 name: 'New Mininet Terminal',
                 shortcut: 'Ctrl+T',
-                // onClick: downloadJson,
+                onClick: onOpenTerminal,
               },
             ]}
           />
-          {/* <ActionButton
-            label="Deploy"
-            // disabled={hydrated ? !checkSave : true}
-            onClick={async () => {
-              const topo = getTopoJson();
-              await loadTopology(topo);
-            }}
-            icon={<ArrowForwardIcon w={6} h={6} color="blue.500" />}
-            isLoading={saveLoading}
-          /> */}
-          <Spacer />
-          <Button
-            leftIcon={<CloseIcon />}
-            size="sm"
-            colorScheme="red"
-            variant="solid"
-            // onClick={async () => {
-            //   if (checkSave) onOpenSave();
-            //   else {
-            //     localStorage.removeItem('flow');
-            //     await Router.push('/flows');
-            //   }
-            // }}
-          >
-            Leave editor
-          </Button>
         </HStack>
       </Stack>
     </Nav>
   );
 }
-
-const ActionButton = ({
-  label,
-  disabled,
-  onClick,
-  icon,
-  isLoading,
-}: {
-  label: string;
-  disabled?: boolean;
-  onClick?: () => void;
-  icon: ReactNode;
-  isLoading?: boolean;
-}) => {
-  return (
-    <Tooltip label={label}>
-      <Button
-        isLoading={isLoading}
-        disabled={disabled}
-        padding={0}
-        background="transparent"
-        onClick={onClick}
-      >
-        {icon}
-      </Button>
-    </Tooltip>
-  );
-};
 
 const DropDown = ({
   name,
