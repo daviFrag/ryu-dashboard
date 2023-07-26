@@ -1,4 +1,4 @@
-import array
+from array import array
 from fcntl import ioctl
 import socket
 from struct import pack, unpack
