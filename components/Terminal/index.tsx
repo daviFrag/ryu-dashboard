@@ -27,6 +27,7 @@ export const TerminalPanel = (props: TerminalPanelProps) => {
 let buffer = '';
 
 const TerminalObj = ({ onClose }: TerminalPanelProps) => {
+  const [lastCmd, setLastCmd] = useState<string>('');
   const [logs, setLogs] = useState<Log[]>([]);
 
   const { sendJsonMessage, readyState } = useWebSocket(
@@ -35,12 +36,7 @@ const TerminalObj = ({ onClose }: TerminalPanelProps) => {
       onMessage(event) {
         const bufferCopy = buffer;
         if (event.data == '___STOP___') {
-          setLogs((prev) => {
-            if (prev.length === 0) return prev;
-            prev[prev.length - 1].output = bufferCopy;
-            console.log(prev);
-            return [...prev];
-          });
+          setLogs((prev) => [...prev, { cmd: lastCmd, output: bufferCopy }]);
           buffer = '';
           return;
         }
@@ -57,6 +53,7 @@ const TerminalObj = ({ onClose }: TerminalPanelProps) => {
 
   return (
     <Terminal
+      // prompt="mininet>"
       height="30vh"
       name=""
       colorMode={ColorMode.Dark}
@@ -65,7 +62,7 @@ const TerminalObj = ({ onClose }: TerminalPanelProps) => {
           setLogs([]);
           return;
         }
-        setLogs((prev) => [...prev, { cmd: terminalInput, output: '' }]);
+        setLastCmd(terminalInput);
         sendJsonMessage({ shell: '123', data: terminalInput });
       }}
       redBtnCallback={onClose}
@@ -77,6 +74,7 @@ const TerminalObj = ({ onClose }: TerminalPanelProps) => {
             <TerminalOutput>{log.output}</TerminalOutput>
           </div>
         ))}
+        <TerminalOutput>{buffer}</TerminalOutput>
       </Flex>
     </Terminal>
   );
