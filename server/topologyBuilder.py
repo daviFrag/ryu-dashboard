@@ -1,26 +1,25 @@
 from mininet.net import Mininet
-from mininet.topo import Topo 
 
 from mininet.log import lg
-from mininet.cli import CLI
 from mininet.clean import Cleanup
 from mininet.node import Host, CPULimitedHost, IVSSwitch, UserSwitch, OVSKernelSwitch, RemoteController, OVSController, Controller
 from mininet.link import Intf, TCLink
-from mininet.util import netParse, ipAdd, quietRun
+from mininet.util import netParse, ipAdd
 from nodes import DockerHost
 
-from subprocess import call, Popen, PIPE
+from subprocess import call
+from threading import Thread
 
 from re import match
 from json import dumps
 from os import listdir
-import socket
-from sys import maxsize
-from array import array
-from fcntl import ioctl
-from struct import pack, unpack
+
+from terminal.io import WebSocketIOV2
+from terminal.util import shellWrapper
 
 from enum import Enum
+
+from util import getIfInfo
 
 try:
   from urllib.request import build_opener, HTTPHandler, Request
@@ -100,12 +99,15 @@ class TopologyBuilder:
 
         # TODO: add VLAN interfaces
 
+        print("building")
         # build mininet
         self.mn.build()
 
+        print("starting")
         # start mininet
         self.startMininet()
 
+        print("post config")
         # post configuration
         self.postConfiguration(topo['nodes'])
 
@@ -194,10 +196,6 @@ class TopologyBuilder:
 
     # get JSON rappresentation of the entire topology
     def getTopoJSON(self):
-        
-        switchNodes = self.mn.switches
-        controllerNodes = self.mn.controllers
-
         return {
             "hosts": self.getHostsJSON(),
             "switches": self.getSwitchesJSON(),
@@ -303,12 +301,12 @@ class TopologyBuilder:
         if delay != None:
             opts["delay"] = delay
         if loss != None:
-            opts["loss"] = loss    
+            opts["loss"] = loss
 
         if (len(opts) > 0):
             return self.mn.addLink(src, dest, cls=TCLink, **opts)
 
-        return self.mn.addLink(src, dest, cls=TCLink)
+        return self.mn.addLink(src, dest)
     
     def createVLANIntf(self, nodes):
         for node in nodes:
@@ -436,10 +434,11 @@ class TopologyBuilder:
     # add custom docker host node
     def addDockerHost(self, name: str, **params):
         self.mn.addHost(name, cls=DockerHost, params=params)
-    
-    # start the CLI from the terminal
-    def runCLI(self):
-        CLI( self.mn )
+
+    def wsShell(self, pipe: WebSocketIOV2, cmdqueue = []):
+        x = Thread(target=shellWrapper, daemon=True, args=(self.mn, pipe, cmdqueue) )
+        x.start()
+
         
     # start mininet
     def startMininet(self):
@@ -448,36 +447,3 @@ class TopologyBuilder:
     # stop mininet
     def stopMininet(self):
         self.mn.stop()
-
-def getIfInfo(dst):
-    is_64bits = maxsize > 2**32
-    struct_size = 40 if is_64bits else 32
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    max_possible = 8 # initial value
-    while True:
-        bytes = max_possible * struct_size
-        names = array('B')
-        for i in range(0, bytes):
-            names.append(0)
-        outbytes = unpack('iL', ioctl(
-            s.fileno(),
-            0x8912,  # SIOCGIFCONF
-            pack('iL', bytes, names.buffer_info()[0])
-        ))[0]
-        if outbytes == bytes:
-            max_possible *= 2
-        else:
-            break
-    s.connect((dst, 0))
-    ip = s.getsockname()[0]
-    for i in range(0, outbytes, struct_size):
-        addr = socket.inet_ntoa(names[i+20:i+24])
-        if addr == ip:
-            name = names[i:i+16]
-            try:
-                name = name.tobytes().decode('utf-8')
-            except AttributeError:
-                name = name.tostring()
-            name = name.split('\0', 1)[0]
-            return (name,addr)
-
