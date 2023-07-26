@@ -30,11 +30,30 @@ Access the editor with this url http://localhost:3000
 
 ## Mininet SDN installation:
 Follow instructions in the repo https://git.comnets.net/public-repo/comnetsemu for a fully automated Vagrant installation
+After that edit the vagrantfile and add this line of code to enable port forwarding:
+```
+comnetsemu.vm.network "forwarded_port", guest: 8080, host: 7000, host_ip: "127.0.0.1"
+```
+And restart the VM with the command:
+```
+vagrant reload
+```
 After the installation enter in the comnetsemu VM and clone this repository in home and start the service
 ```
 git clone https://github.com/daviFrag/ryu-dashboard.git
-cd ryu-dashboard
-
+cd ryu-dashboard/server
+sudo pip3 install -r requirements.txt
+```
+Start the service by installing our custom linux service:
+```
+sudo cp service/mininetBuilder.service /etc/systemd/system/mininetBuilder.service
+sudo systemctl daemon-reload
+sudo systemctl start mininetBuilder
+sudo systemctl enable mininetBuilder
+```
+Or start as a python program:
+```
+sudo python3 server.py
 ```
 
 ## Sflow dashboard:
