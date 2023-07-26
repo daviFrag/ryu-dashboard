@@ -4,13 +4,13 @@
 Welcome to the MininetBuilder Git repository! Here you will find a powerful tool designed to enhance your experience with Mininet, a popular software-defined network (SDN) emulator. MininetBuilder offers a range of features, including the ability to effortlessly edit your Mininet network configurations and conveniently visualize network statistics. Additionally, MininetBuilder goes a step further by providing experimental support to configure switches with external protocols like sFlow and NetFlow. This groundbreaking capability allows you to gather detailed flow-level information and gain deeper insights into your network's performance and traffic patterns. Whether you're a network engineer, researcher, or developer, MininetBuilder empowers you to unlock new possibilities and fine-tune your SDN deployments. Get ready to revolutionize your Mininet experience with MininetBuilder!
 
 ## Demo:
-Try out MininetBuilder whithout any installation: https://ryu-dashboard.vercel.app
+Try out MininetBuilder whithout any installation: https://mininet-builder.vercel.app
 
 ## Installation:
 ### Gui installation:
 Clone the git repository:
 ```
-git clone https://github.com/daviFrag/ryu-dashboard.git
+git clone https://github.com/daviFrag/mininetBuilder.git
 ```
 Build and start the gui interface:
 ```
@@ -40,7 +40,7 @@ vagrant reload
 ```
 After the installation enter in the comnetsemu VM and clone this repository in home and start the service
 ```
-git clone https://github.com/daviFrag/ryu-dashboard.git
+git clone https://github.com/daviFrag/mininetBuilder.git
 cd ryu-dashboard/server
 sudo pip3 install -r requirements.txt
 ```
