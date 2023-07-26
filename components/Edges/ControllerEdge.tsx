@@ -1,6 +1,6 @@
 import { EdgeProps, getBezierPath } from 'reactflow';
 
-export default function DataEdge({
+export default function ControllerEdge({
   id,
   sourceX,
   sourceY,
@@ -28,7 +28,7 @@ export default function DataEdge({
         style={style}
         d={edgePath}
         markerEnd={markerEnd}
-        stroke={data?.packets < 200 ? 'lightblue' : 'gray'}
+        stroke={'red'}
         fill="none"
       />
       <text>

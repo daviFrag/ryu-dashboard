@@ -314,7 +314,10 @@ export const useNetStore = create<NetState>()(
         const state = get();
         const topo = {
           nodes: state.getReactFlowNodes().map((node) => node.data),
-          links: state.getReactFlowEdges().map((edge) => edge.data),
+          links: state
+            .getReactFlowEdges()
+            .filter((edge) => edge.type !== 'controllerEdge')
+            .map((edge) => edge.data),
         };
         return topo;
       },
@@ -322,18 +325,23 @@ export const useNetStore = create<NetState>()(
       createEdge(conn: Connection) {
         const state = get();
         const uuid = v4();
-        conn.sourceHandle;
+
+        const nodeSrc = state.nodeMap.get(conn.source ?? '');
+        const nodeDest = state.nodeMap.get(conn.target ?? '');
+
         const edgeData: NetLink = {
-          src: state.nodeMap.get(conn.source ?? '')?.data.hostname,
-          dest: state.nodeMap.get(conn.target ?? '')?.data.hostname,
+          src: nodeSrc?.data.hostname,
+          dest: nodeDest?.data.hostname,
         };
         const edge: ReactFlowLink = {
           id: uuid,
-          type: 'dataEdge',
+          type:
+            nodeSrc?.type === 'controllerNode' ? 'controllerEdge' : 'dataEdge',
           target: conn.target ?? '',
           source: conn.source ?? '',
           sourceHandle: conn.sourceHandle,
           targetHandle: conn.targetHandle,
+          animated: nodeSrc?.type === 'controllerNode',
           data: edgeData,
         };
 
@@ -405,8 +413,8 @@ export const useNetStore = create<NetState>()(
           ip: '127.0.0.1',
           port: '6633',
           protocol: 'tcp',
-          hostname: 's' + numNode,
-          label: 's' + numNode,
+          hostname: 'c' + numNode,
+          label: 'c' + numNode,
         };
         const controllerNode: ReactFlowControllerNode = {
           id: uuid,

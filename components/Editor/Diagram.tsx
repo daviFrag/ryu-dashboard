@@ -19,6 +19,7 @@ import ReactFlow, {
 
 import 'reactflow/dist/style.css';
 import { useNetStore } from '../../data/zustand/net';
+import ControllerEdge from '../Edges/ControllerEdge';
 import DataEdge from '../Edges/DataEdge';
 import ContextMenu from '../Menu/ContextMenu';
 import EditorNav from '../Navbars/EditorNav';
@@ -34,6 +35,7 @@ export type DiagramProps = {};
 
 const edgeTypes = {
   dataEdge: DataEdge,
+  controllerEdge: ControllerEdge,
 };
 
 const nodeTypes = {

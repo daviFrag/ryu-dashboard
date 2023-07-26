@@ -15,7 +15,7 @@ function ControllerNode({ data }: NodeProps) {
       />
       {data.label}
       <Handle type="source" position={Position.Bottom} isConnectable={true} />
-      <Handle type="target" position={Position.Top} isConnectable={true} />
+      {/* <Handle type="target" position={Position.Top} isConnectable={true} /> */}
     </>
   );
 }
