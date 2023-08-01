@@ -32,7 +32,7 @@ Access the editor with this url http://localhost:3000
 Follow instructions in the repo https://git.comnets.net/public-repo/comnetsemu for a fully automated Vagrant installation
 After that edit the vagrantfile and add this line of code to enable port forwarding:
 ```
-comnetsemu.vm.network "forwarded_port", guest: 8080, host: 7000, host_ip: "127.0.0.1"
+comnetsemu.vm.network "forwarded_port", guest: 8080, host: 8080, host_ip: "127.0.0.1"
 ```
 And restart the VM with the command:
 ```
