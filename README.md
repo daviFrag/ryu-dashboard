@@ -14,7 +14,7 @@ git clone https://github.com/daviFrag/mininetBuilder.git
 ```
 Build and start the gui interface:
 ```
-cd ryu-dashboard
+cd mininetBuilder
 docker compose up
 ```
 Access the editor with this url http://localhost:3000
@@ -22,7 +22,7 @@ Access the editor with this url http://localhost:3000
 Or build it from source:
 Clone the repo and then:
 ```
-cd ryu-dashboard
+cd mininetBuilder
 npm run build
 npm run start
 ```
@@ -41,7 +41,7 @@ vagrant reload
 After the installation enter in the comnetsemu VM and clone this repository in home and start the service
 ```
 git clone https://github.com/daviFrag/mininetBuilder.git
-cd ryu-dashboard/server
+cd mininetBuilder/server
 sudo pip3 install -r requirements.txt
 ```
 Start the service by installing our custom linux service:
