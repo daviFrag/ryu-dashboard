@@ -14,7 +14,7 @@
     "prettier": "prettier --write ."
   },
   "dependencies": {
-    "@chakra-ui/icons": "^2.0.19",
+    "@chakra-ui/icons": "^2.1.1",
     "@chakra-ui/next-js": "^2.1.4",
     "@chakra-ui/react": "^2.7.1",
     "@emotion/react": "^11.10.5",
