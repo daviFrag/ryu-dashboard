@@ -1,4 +1,4 @@
-flask==2.3.2
+flask==3.0.0
 mininet
 uwsgi
 flask-cors
